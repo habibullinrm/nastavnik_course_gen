@@ -1,0 +1,930 @@
+openapi: "3.1.0"
+info:
+  title: "Nastavnik Testing Service — Backend API"
+  version: "0.1.0"
+  description: |
+    Backend API сервиса тестирования алгоритма генерации учебных треков.
+    Отвечает за хранение профилей, треков, QA-отчётов и оркестрацию ML-сервиса.
+
+servers:
+  - url: http://backend:8000
+    description: Docker internal network
+  - url: http://localhost:8000
+    description: Local development
+
+tags:
+  - name: profiles
+    description: Загрузка и управление профилями учащихся
+  - name: tracks
+    description: Генерация и просмотр учебных треков
+  - name: qa
+    description: Контроль качества — пакетная генерация и CDV-анализ
+  - name: export
+    description: Экспорт результатов
+  - name: logs
+    description: Логирование промежуточных результатов генерации для отладки
+
+paths:
+  # ===================== PROFILES =====================
+  /api/profiles:
+    post:
+      tags: [profiles]
+      operationId: uploadProfile
+      summary: Загрузка и валидация JSON-профиля
+      description: |
+        Загружает JSON-файл с StudentProfile. Валидирует CRITICAL/IMPORTANT поля.
+        Сохраняет профиль в БД. Возвращает результат валидации.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JSON-файл с StudentProfile
+      responses:
+        "201":
+          description: Профиль загружен и провалидирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileUploadResponse"
+        "400":
+          description: Невалидный JSON или отсутствуют CRITICAL-поля
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+
+    get:
+      tags: [profiles]
+      operationId: listProfiles
+      summary: Список загруженных профилей
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Список профилей
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileListResponse"
+
+  /api/profiles/{profile_id}:
+    get:
+      tags: [profiles]
+      operationId: getProfile
+      summary: Получение профиля по ID
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Профиль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileDetail"
+        "404":
+          description: Профиль не найден
+
+  # ===================== TRACKS =====================
+  /api/tracks/generate:
+    post:
+      tags: [tracks]
+      operationId: generateTrack
+      summary: Запуск одиночной генерации трека
+      description: |
+        Запускает полный pipeline B1-B8 для указанного профиля.
+        Возвращает ID трека и URL для отслеживания прогресса.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profile_id]
+              properties:
+                profile_id:
+                  type: string
+                  format: uuid
+      responses:
+        "202":
+          description: Генерация запущена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationStartedResponse"
+        "400":
+          description: Профиль не прошёл валидацию
+        "404":
+          description: Профиль не найден
+
+  /api/tracks/{track_id}:
+    get:
+      tags: [tracks]
+      operationId: getTrack
+      summary: Получение трека по ID
+      description: Полная структура PersonalizedTrack с метаданными генерации.
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Трек
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackDetail"
+        "404":
+          description: Трек не найден
+
+  /api/tracks/{track_id}/progress:
+    get:
+      tags: [tracks]
+      operationId: getTrackProgress
+      summary: SSE-поток прогресса генерации
+      description: |
+        Server-Sent Events: текущий шаг (B1..B8), процент завершения,
+        промежуточные логи. Закрывается при завершении или ошибке.
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/tracks:
+    get:
+      tags: [tracks]
+      operationId: listTracks
+      summary: Список треков
+      parameters:
+        - name: profile_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Фильтр по профилю
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, generating, completed, failed]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Список треков
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackListResponse"
+
+  /api/tracks/{track_id}/field-usage:
+    get:
+      tags: [tracks]
+      operationId: getFieldUsage
+      summary: Индикаторы использованных/неиспользованных полей профиля
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Карта использования полей
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldUsageResponse"
+
+  # ===================== QA =====================
+  /api/qa/generate-batch:
+    post:
+      tags: [qa]
+      operationId: generateBatch
+      summary: Запуск пакетной генерации
+      description: |
+        Запускает N генераций (1–100) из одного профиля.
+        Возвращает ID QA-отчёта для отслеживания.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profile_id, batch_size]
+              properties:
+                profile_id:
+                  type: string
+                  format: uuid
+                batch_size:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+      responses:
+        "202":
+          description: Пакетная генерация запущена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchStartedResponse"
+        "400":
+          description: Невалидные параметры
+        "404":
+          description: Профиль не найден
+
+  /api/qa/reports/{report_id}:
+    get:
+      tags: [qa]
+      operationId: getQAReport
+      summary: Получение QA-отчёта
+      description: |
+        Полный отчёт: CDV-матрица, частота тем, топ стабильных/нестабильных,
+        средний CDV, рекомендация.
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: QA-отчёт
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QAReportDetail"
+        "404":
+          description: Отчёт не найден
+
+  /api/qa/reports/{report_id}/progress:
+    get:
+      tags: [qa]
+      operationId: getBatchProgress
+      summary: SSE-поток прогресса пакетной генерации
+      description: |
+        Поток событий: номер текущей генерации, общий прогресс,
+        статус каждой версии (generating/completed/failed).
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/qa/reports:
+    get:
+      tags: [qa]
+      operationId: listQAReports
+      summary: Список QA-отчётов
+      parameters:
+        - name: profile_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Список отчётов
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QAReportListResponse"
+
+  # ===================== EXPORT =====================
+  /api/export/tracks/{track_id}:
+    get:
+      tags: [export]
+      operationId: exportTrack
+      summary: Экспорт трека в JSON
+      description: "Скачивание файла track_[topic]_[timestamp].json"
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: JSON-файл трека
+          content:
+            application/json:
+              schema:
+                type: object
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: "attachment; filename=\"track_math_logic_20260212T120000.json\""
+
+  /api/export/qa-reports/{report_id}:
+    get:
+      tags: [export]
+      operationId: exportQAReport
+      summary: Экспорт QA-отчёта в JSON
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: JSON-файл QA-отчёта
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/export/qa-reports/{report_id}/all:
+    get:
+      tags: [export]
+      operationId: exportQAReportAll
+      summary: Экспорт всех версий + QA-отчёт в ZIP
+      parameters:
+        - name: report_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: ZIP-архив
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+
+  # ===================== LOGS =====================
+  /api/logs/step:
+    post:
+      tags: [logs]
+      operationId: logStep
+      summary: Сохранить лог шага pipeline (вызывается ML-сервисом)
+      description: |
+        Сохраняет промежуточный результат шага B1-B8 для отладки алгоритма.
+        Вызывается ML-сервисом после выполнения каждого шага pipeline.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [track_id, step_name, step_output, llm_calls, step_duration_sec]
+              properties:
+                track_id:
+                  type: string
+                  format: uuid
+                step_name:
+                  type: string
+                  enum: [B1_validate, B2_competencies, B3_ksa_matrix, B4_learning_units, B5_hierarchy, B6_problem_formulations, B7_schedule, B8_validation]
+                step_output:
+                  type: object
+                  description: Промежуточный результат шага (Pydantic-модель в JSON)
+                llm_calls:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      prompt:
+                        type: string
+                      response:
+                        type: string
+                      tokens:
+                        type: integer
+                      duration_ms:
+                        type: number
+                step_duration_sec:
+                  type: number
+                error_message:
+                  type: string
+                  nullable: true
+      responses:
+        "201":
+          description: Log saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  message:
+                    type: string
+                    example: "Step log saved"
+        "400":
+          description: Invalid request
+        "404":
+          description: Track not found
+
+  /api/logs/track/{track_id}:
+    get:
+      tags: [logs]
+      operationId: getTrackLogs
+      summary: Получить все логи для трека
+      description: |
+        Возвращает все логи шагов B1-B8 для указанного трека.
+        Используется для отладки алгоритма и просмотра промежуточных результатов.
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Массив логов для всех шагов (B1-B8)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GenerationLog"
+        "404":
+          description: Track not found
+
+  /api/logs/track/{track_id}/step/{step_name}:
+    get:
+      tags: [logs]
+      operationId: getTrackStepLog
+      summary: Получить лог конкретного шага
+      description: Возвращает лог одного шага (например, B3_ksa_matrix) для трека.
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: step_name
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [B1_validate, B2_competencies, B3_ksa_matrix, B4_learning_units, B5_hierarchy, B6_problem_formulations, B7_schedule, B8_validation]
+      responses:
+        "200":
+          description: Лог шага
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationLog"
+        "404":
+          description: Step log not found
+
+  # ===================== HEALTH =====================
+  /api/health:
+    get:
+      operationId: healthCheck
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  db:
+                    type: string
+                    example: connected
+                  ml_service:
+                    type: string
+                    example: reachable
+
+# ===================== SCHEMAS =====================
+components:
+  schemas:
+    ProfileUploadResponse:
+      type: object
+      required: [id, valid, errors, warnings, profile_summary]
+      properties:
+        id:
+          type: string
+          format: uuid
+        valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationIssue"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationIssue"
+        profile_summary:
+          type: object
+          properties:
+            topic:
+              type: string
+            experience_level:
+              type: string
+            desired_outcomes_count:
+              type: integer
+            tasks_count:
+              type: integer
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationIssue"
+
+    ValidationIssue:
+      type: object
+      required: [field, message, severity]
+      properties:
+        field:
+          type: string
+          description: "Путь к полю (e.g., 'target_tasks[0].description')"
+        message:
+          type: string
+        severity:
+          type: string
+          enum: [error, warning]
+
+    ProfileListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileSummary"
+        total:
+          type: integer
+
+    ProfileSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        topic:
+          type: string
+        experience_level:
+          type: string
+        filename:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    ProfileDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        data:
+          type: object
+          description: Полная структура StudentProfile
+        filename:
+          type: string
+        validation_result:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    GenerationStartedResponse:
+      type: object
+      properties:
+        track_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          example: generating
+        progress_url:
+          type: string
+          example: "/api/tracks/{track_id}/progress"
+
+    TrackDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        profile_id:
+          type: string
+          format: uuid
+        track_data:
+          type: object
+          description: Полная структура PersonalizedTrack
+        generation_metadata:
+          type: object
+          properties:
+            algorithm_version:
+              type: string
+            started_at:
+              type: string
+              format: date-time
+            finished_at:
+              type: string
+              format: date-time
+            llm_calls_count:
+              type: integer
+            total_tokens:
+              type: integer
+        validation_b8:
+          type: object
+          description: Результат валидации B8
+        status:
+          type: string
+          enum: [pending, generating, completed, failed]
+        generation_duration_sec:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    TrackListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrackSummary"
+        total:
+          type: integer
+
+    TrackSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        profile_id:
+          type: string
+          format: uuid
+        topic:
+          type: string
+        status:
+          type: string
+        algorithm_version:
+          type: string
+        total_weeks:
+          type: integer
+          nullable: true
+        generation_duration_sec:
+          type: number
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    FieldUsageResponse:
+      type: object
+      properties:
+        used_fields:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              used_in_steps:
+                type: array
+                items:
+                  type: string
+        unused_fields:
+          type: array
+          items:
+            type: string
+
+    BatchStartedResponse:
+      type: object
+      properties:
+        report_id:
+          type: string
+          format: uuid
+        batch_size:
+          type: integer
+        status:
+          type: string
+          example: generating
+        progress_url:
+          type: string
+
+    QAReportDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        profile_id:
+          type: string
+          format: uuid
+        batch_size:
+          type: integer
+        completed_count:
+          type: integer
+        status:
+          type: string
+          enum: [pending, generating, calculating, completed, failed]
+        report_data:
+          type: object
+          nullable: true
+          description: "Полная структура QAReport (CDV-матрица, частота тем, рекомендация)"
+          properties:
+            cdv_matrix:
+              type: array
+              items:
+                type: object
+                properties:
+                  version_a_index:
+                    type: integer
+                  version_b_index:
+                    type: integer
+                  cdv_total:
+                    type: number
+                  cdv_topics:
+                    type: number
+                  cdv_subtopics:
+                    type: number
+                  cdv_activities:
+                    type: number
+            topic_frequency:
+              type: array
+              items:
+                type: object
+                properties:
+                  topic_name:
+                    type: string
+                  count:
+                    type: integer
+                  total_versions:
+                    type: integer
+                  frequency_pct:
+                    type: number
+            top_stable_topics:
+              type: array
+              items:
+                type: string
+            top_unstable_topics:
+              type: array
+              items:
+                type: string
+            mean_cdv:
+              type: number
+            cdv_std:
+              type: number
+            recommendation:
+              type: string
+              enum: [stable, needs_improvement, unstable]
+        track_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        created_at:
+          type: string
+          format: date-time
+
+    QAReportListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              profile_id:
+                type: string
+                format: uuid
+              batch_size:
+                type: integer
+              completed_count:
+                type: integer
+              mean_cdv:
+                type: number
+                nullable: true
+              recommendation:
+                type: string
+                nullable: true
+              status:
+                type: string
+              created_at:
+                type: string
+                format: date-time
+        total:
+          type: integer
+
+    GenerationLog:
+      type: object
+      required: [id, track_id, step_name, step_output, llm_calls, step_duration_sec, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        track_id:
+          type: string
+          format: uuid
+        step_name:
+          type: string
+          enum: [B1_validate, B2_competencies, B3_ksa_matrix, B4_learning_units, B5_hierarchy, B6_problem_formulations, B7_schedule, B8_validation]
+          description: Название шага pipeline
+        step_output:
+          type: object
+          description: Промежуточный результат шага (ValidatedStudentProfile, CompetencySet, и т.д.)
+        llm_calls:
+          type: array
+          items:
+            type: object
+            properties:
+              prompt:
+                type: string
+              response:
+                type: string
+              tokens:
+                type: integer
+              duration_ms:
+                type: number
+          description: Массив всех LLM-вызовов в шаге
+        step_duration_sec:
+          type: number
+          description: Длительность выполнения шага в секундах
+        error_message:
+          type: string
+          nullable: true
+          description: Сообщение об ошибке (если шаг упал)
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp создания лога

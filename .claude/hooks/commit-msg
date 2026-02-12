@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# commit-msg hook - Проверка русского языка в commit message
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Если хук запускается из .git/hooks/, ищем скрипты в .claude/hooks/
+if [[ "$SCRIPT_DIR" == *".git/hooks"* ]]; then
+    GIT_ROOT=$(git rev-parse --show-toplevel)
+    HOOKS_DIR="$GIT_ROOT/.claude/hooks"
+else
+    HOOKS_DIR="$SCRIPT_DIR"
+fi
+
+source "$HOOKS_DIR/scripts/common.sh"
+
+log_info "Запуск commit-msg hook..."
+
+# Первый аргумент - файл с commit message
+COMMIT_MSG_FILE="$1"
+
+if [ -z "$COMMIT_MSG_FILE" ]; then
+    log_error "Не указан файл с commit message"
+    exit 1
+fi
+
+# Проверка русского языка
+if bash "$HOOKS_DIR/scripts/check-russian-commit.sh" "$COMMIT_MSG_FILE"; then
+    log_success "Commit-msg hook: проверка пройдена"
+    exit 0
+else
+    echo ""
+    log_error "Commit-msg hook: сообщение коммита не соответствует требованиям"
+    log_info "Используйте 'git commit --no-verify' для пропуска проверки (не рекомендуется)"
+    exit 1
+fi

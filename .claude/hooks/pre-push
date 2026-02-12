@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# pre-push hook - Запуск тестов и проверок перед push
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Если хук запускается из .git/hooks/, ищем скрипты в .claude/hooks/
+if [[ "$SCRIPT_DIR" == *".git/hooks"* ]]; then
+    GIT_ROOT=$(git rev-parse --show-toplevel)
+    HOOKS_DIR="$GIT_ROOT/.claude/hooks"
+else
+    HOOKS_DIR="$SCRIPT_DIR"
+fi
+
+source "$HOOKS_DIR/scripts/common.sh"
+
+log_info "Запуск pre-push hook..."
+
+ERRORS=0
+
+# Проверка Docker конфигурации
+if bash "$HOOKS_DIR/scripts/docker-health-check.sh"; then
+    :
+else
+    ERRORS=$((ERRORS + 1))
+fi
+
+# Запуск тестов для backend (если есть)
+if [ -d "$GIT_ROOT/backend/tests" ]; then
+    log_info "Запуск тестов для backend..."
+
+    cd "$GIT_ROOT/backend"
+
+    if python -m pytest -x --tb=short >/dev/null 2>&1; then
+        log_success "Backend тесты пройдены"
+    else
+        log_error "Backend тесты не пройдены"
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
+
+# Запуск тестов для ml (если есть)
+if [ -d "$GIT_ROOT/ml/tests" ]; then
+    log_info "Запуск тестов для ml..."
+
+    cd "$GIT_ROOT/ml"
+
+    if python -m pytest -x --tb=short >/dev/null 2>&1; then
+        log_success "ML тесты пройдены"
+    else
+        log_error "ML тесты не пройдены"
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
+
+# Итоговый результат
+if [ $ERRORS -gt 0 ]; then
+    echo ""
+    log_error "Pre-push hook: найдены ошибки"
+    log_info "Используйте 'git push --no-verify' для пропуска проверки (не рекомендуется)"
+    exit 1
+fi
+
+log_success "Pre-push hook: все проверки пройдены"
+exit 0

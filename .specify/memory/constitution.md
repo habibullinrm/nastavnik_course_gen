@@ -1,50 +1,176 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+  Sync Impact Report
+  ==================
+  Version change: 0.0.0 (unfilled template) -> 1.0.0
+  Modified principles: N/A (initial creation)
+  Added sections:
+    - Core Principles (5 principles from user input)
+    - Architecture Constraints (inferred from docs/)
+    - Quality & Development Standards (inferred from SpecKit + docs/)
+    - Governance
+  Removed sections: None
+  Templates requiring updates:
+    - .specify/templates/plan-template.md — ✅ no update needed
+      (Constitution Check section is generic; filled per feature)
+    - .specify/templates/spec-template.md — ✅ no update needed
+      (mandatory sections align with principles)
+    - .specify/templates/tasks-template.md — ✅ no update needed
+      (task structure is principle-agnostic)
+    - .specify/templates/agent-file-template.md — ✅ no update needed
+    - CLAUDE.md — ✅ no update needed (already aligned)
+    - README.md — ✅ no update needed (minimal)
+  Follow-up TODOs: None
+-->
+
+# nastavnik_course_gen Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Container Isolation
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Frontend, база данных, бэкенд и ML-сервисы MUST запускаться
+в отдельных Docker-контейнерах. Каждый сервис:
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- Имеет собственный `Dockerfile` и определён в `docker-compose.yml`.
+- Взаимодействует с другими сервисами исключительно через сеть
+  (HTTP/gRPC), а не через общую файловую систему или память.
+- Может быть собран, запущен и остановлен независимо от остальных.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+Контейнеры: `frontend`, `backend`, `ml`, `db`.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Technology Stack
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Стек технологий фиксирован и НЕ подлежит замене без
+amendment конституции:
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- **Frontend**: Next.js + Tailwind CSS.
+- **Backend**: Python + FastAPI.
+- **ML-сервис**: Python + FastAPI.
+- **База данных**: PostgreSQL.
+- **Оркестрация**: Docker Compose.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Добавление новых runtime-зависимостей (фреймворки, ORM, брокеры
+сообщений) MUST быть обосновано и отражено в конституции.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Async-First
+
+Все HTTP-запросы между сервисами и все операции ввода-вывода
+MUST быть асинхронными:
+
+- Backend и ML-сервисы MUST использовать `async def` эндпоинты
+  в FastAPI.
+- Запросы к базе данных MUST выполняться через асинхронный
+  драйвер (например, `asyncpg`).
+- Запросы к внешним API (DeepSeek, прочие) MUST использовать
+  асинхронный HTTP-клиент (например, `httpx.AsyncClient`).
+- Frontend MUST выполнять API-вызовы неблокирующим способом.
+
+Синхронные блокирующие вызовы в production-коде запрещены.
+
+### IV. Russian Documentation (Google Docstring)
+
+Вся документация проекта MUST быть на русском языке:
+
+- Docstring-и в Python-коде MUST следовать формату
+  Google Docstring на русском языке.
+- Commit-сообщения MUST быть на русском.
+- Спецификации в `docs/` и `specs/` MUST быть на русском.
+- JSDoc/комментарии во frontend-коде MUST быть на русском.
+- Имена переменных и функций остаются на английском.
+
+### V. DeepSeek as LLM Provider
+
+Для всех запросов к LLM (генерация курса, классификация
+ответов, проведение уроков) система MUST использовать
+DeepSeek API:
+
+- ML-сервис MUST отправлять запросы к DeepSeek API.
+- Промпты MUST следовать принципу структурированного
+  промптинга: инструкция шага, входные данные, формат
+  выхода (TypeScript-интерфейс), критерии качества, примеры.
+- Ключи API MUST храниться в переменных окружения,
+  а не в коде.
+- Система MUST поддерживать graceful degradation при
+  недоступности API (retry с backoff, информативные ошибки).
+
+## Architecture Constraints
+
+Система реализует трёхфазный pipeline для генерации
+персонализированных учебных треков:
+
+- **Фаза A** (Сбор данных): интерактивный диалог с
+  пользователем через frontend → backend. Результат:
+  `StudentProfile`.
+- **Фаза B** (Проектирование курса): автоматический
+  pipeline в ML-сервисе (шаги B1-B8) через DeepSeek.
+  Результат: `PersonalizedTrack`.
+- **Фаза C** (Проведение обучения): FSM-движок с 8
+  состояниями (ПП, ГП, КИ, ПМ, ПТ, СЗ, РФ, ПЗ)
+  в ML-сервисе. Интерактивный режим.
+
+Ограничения:
+
+- Фазы MUST выполняться последовательно: A → B → C.
+- Данные передаются только вперёд: B получает
+  `StudentProfile` из A; C получает `PersonalizedTrack` из B.
+- Шаги фазы B (B1-B8) MUST выполняться в порядке
+  зависимостей.
+- Валидация трека (B8) — обязательный гейт перед фазой C.
+- FSM фазы C MUST реализовывать полную таблицу переходов
+  из Приложения A (`algorithm_v1.md`).
+- Каждый шаг взаимодействия MUST предоставлять fallback-
+  сценарий для новичков (Principle III из `phase_a.md`).
+
+## Quality & Development Standards
+
+### Педагогические модели
+
+Генерация курса MUST основываться на:
+
+- **4C/ID** — каркас проектирования учебных единиц.
+- **PBL** — каждая тема начинается с практической проблемы.
+- **ЗУН** — компетенции декомпозируются на Знания → Умения →
+  Навыки.
+
+### Покрытие
+
+В каждом сгенерированном треке MUST выполняться:
+
+- Каждый `desired_outcome` покрыт хотя бы одной компетенцией.
+- Каждая компетенция имеет минимум 1 Знание, 1 Умение, 1 Навык.
+- Каждый элемент ЗУН покрыт учебной единицей.
+- Каждая учебная единица включена в расписание.
+- Каждый `success_criterion` покрыт checkpoint-ом.
+
+### Workflow разработки
+
+Разработка фич следует pipeline SpecKit:
+**Branch → Spec → Plan → Tasks → Implement**.
+
+Именование веток: `[###]-[feature-name]`
+(например, `001-data-collector`).
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Конституция является авторитетным источником принципов
+проекта. Она превалирует над ad-hoc решениями.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Процедура изменений**:
+
+1. Предложить изменение с обоснованием.
+2. Обновить этот файл.
+3. Проверить согласованность с шаблонами и CLAUDE.md.
+4. Коммит в формате:
+   `docs: amend constitution to vX.Y.Z (<описание>)`.
+
+**Версионирование** (Semantic Versioning):
+
+- **MAJOR**: удаление или несовместимое изменение принципа.
+- **MINOR**: новый принцип или существенное расширение.
+- **PATCH**: уточнения формулировок, исправление опечаток.
+
+**Compliance**: все PR и ревью спецификаций MUST проверять
+соответствие принципам конституции. Для runtime-гайдлайнов
+использовать `CLAUDE.md`.
+
+**Version**: 1.0.0 | **Ratified**: 2026-02-12 | **Last Amended**: 2026-02-12

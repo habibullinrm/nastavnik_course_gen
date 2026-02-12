@@ -1,0 +1,9 @@
+{
+    "permissions": {
+        "allow": [
+            "Bash(.specify/scripts/*:*)",
+            "Bash(.claude/hooks/*:*)"
+        ]
+    },
+    "model": "sonnet"
+}

@@ -1,0 +1,305 @@
+openapi: "3.1.0"
+info:
+  title: "Nastavnik Testing Service — ML Service API"
+  version: "0.1.0"
+  description: |
+    ML-сервис: pipeline генерации учебных треков (B1-B8),
+    расчёт CDV-метрик, взаимодействие с DeepSeek API.
+    Внутренний сервис — вызывается только из backend.
+
+servers:
+  - url: http://ml:8001
+    description: Docker internal network
+
+tags:
+  - name: pipeline
+    description: Запуск и управление pipeline B1-B8
+  - name: cdv
+    description: Расчёт CDV-метрик
+  - name: health
+    description: Healthcheck
+
+paths:
+  # ===================== PIPELINE =====================
+  /pipeline/run:
+    post:
+      tags: [pipeline]
+      operationId: runPipeline
+      summary: Запуск полного pipeline B1-B8
+      description: |
+        Принимает валидированный StudentProfile, последовательно выполняет
+        шаги B1-B8 через DeepSeek API. Возвращает PersonalizedTrack.
+        Промежуточные результаты хранятся в памяти сессии.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PipelineRunRequest"
+      responses:
+        "200":
+          description: Pipeline завершён успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineRunResponse"
+        "400":
+          description: Невалидный профиль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineError"
+        "500":
+          description: Ошибка LLM или внутренняя ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineError"
+        "502":
+          description: DeepSeek API недоступен после retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineError"
+
+  /pipeline/run-stream:
+    post:
+      tags: [pipeline]
+      operationId: runPipelineStream
+      summary: Запуск pipeline B1-B8 с SSE-прогрессом
+      description: |
+        То же, что /pipeline/run, но возвращает SSE-поток с событиями прогресса.
+        Каждое событие: текущий шаг, процент, лог. Финальное событие: результат.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PipelineRunRequest"
+      responses:
+        "200":
+          description: SSE stream с прогрессом и финальным результатом
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  Формат событий:
+                  - event: progress, data: { step: "B1", step_name: "Валидация профиля", progress_pct: 12 }
+                  - event: step_completed, data: { step: "B1", duration_sec: 3.2, tokens_used: 1500 }
+                  - event: completed, data: { track: PersonalizedTrack, metadata: {...} }
+                  - event: error, data: { step: "B3", message: "...", retryable: true }
+
+  # ===================== CDV =====================
+  /cdv/calculate:
+    post:
+      tags: [cdv]
+      operationId: calculateCDV
+      summary: Расчёт CDV между парами треков
+      description: |
+        Принимает массив PersonalizedTrack, рассчитывает CDV между
+        всеми парами. Возвращает матрицу CDV, частоту тем, рекомендацию.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CDVCalculateRequest"
+      responses:
+        "200":
+          description: CDV-отчёт
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CDVCalculateResponse"
+        "400":
+          description: Менее 2 треков для сравнения
+
+  # ===================== HEALTH =====================
+  /health:
+    get:
+      tags: [health]
+      operationId: mlHealthCheck
+      summary: Health check ML-сервиса
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  deepseek_api:
+                    type: string
+                    enum: [reachable, unreachable]
+                    description: Проверка доступности DeepSeek API
+
+components:
+  schemas:
+    PipelineRunRequest:
+      type: object
+      required: [profile]
+      properties:
+        profile:
+          type: object
+          description: "Полная структура StudentProfile (валидированный JSON)"
+        algorithm_version:
+          type: string
+          default: "0.1.0"
+          description: Версия алгоритма генерации
+
+    PipelineRunResponse:
+      type: object
+      required: [track, metadata]
+      properties:
+        track:
+          type: object
+          description: "Полная структура PersonalizedTrack"
+        metadata:
+          $ref: "#/components/schemas/GenerationMetadata"
+
+    GenerationMetadata:
+      type: object
+      properties:
+        algorithm_version:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: string
+          format: date-time
+        steps_log:
+          type: array
+          items:
+            $ref: "#/components/schemas/StepLog"
+        llm_calls_count:
+          type: integer
+        total_tokens:
+          type: integer
+        total_duration_sec:
+          type: number
+
+    StepLog:
+      type: object
+      properties:
+        step:
+          type: string
+          enum: [B1, B2, B3, B4, B5, B6, B7, B8]
+        step_name:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: string
+          format: date-time
+        duration_sec:
+          type: number
+        llm_calls:
+          type: integer
+        tokens_used:
+          type: integer
+        status:
+          type: string
+          enum: [completed, failed, skipped]
+        error:
+          type: string
+          nullable: true
+
+    PipelineError:
+      type: object
+      properties:
+        error:
+          type: string
+        step:
+          type: string
+          nullable: true
+          description: "Шаг, на котором произошла ошибка (B1-B8)"
+        retryable:
+          type: boolean
+        details:
+          type: string
+          nullable: true
+
+    CDVCalculateRequest:
+      type: object
+      required: [tracks]
+      properties:
+        tracks:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required: [index, track_data]
+            properties:
+              index:
+                type: integer
+                description: "Номер версии (0-based)"
+              track_data:
+                type: object
+                description: "Полная структура PersonalizedTrack"
+
+    CDVCalculateResponse:
+      type: object
+      required: [cdv_matrix, topic_frequency, mean_cdv, cdv_std, recommendation]
+      properties:
+        cdv_matrix:
+          type: array
+          items:
+            type: object
+            required: [version_a, version_b, cdv_total]
+            properties:
+              version_a:
+                type: integer
+              version_b:
+                type: integer
+              cdv_total:
+                type: number
+                description: "Общий CDV (0.0–1.0)"
+              cdv_topics:
+                type: number
+                description: "CDV по структуре тем (вес 0.4)"
+              cdv_subtopics:
+                type: number
+                description: "CDV по содержанию подтем (вес 0.3)"
+              cdv_activities:
+                type: number
+                description: "CDV по составу учебных действий (вес 0.3)"
+        topic_frequency:
+          type: array
+          items:
+            type: object
+            properties:
+              topic_name:
+                type: string
+              count:
+                type: integer
+              total_versions:
+                type: integer
+              frequency_pct:
+                type: number
+        top_stable_topics:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        top_unstable_topics:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        mean_cdv:
+          type: number
+        cdv_std:
+          type: number
+        recommendation:
+          type: string
+          enum: [stable, needs_improvement, unstable]
+          description: |
+            stable: mean_cdv < 0.15
+            needs_improvement: 0.15 <= mean_cdv <= 0.30
+            unstable: mean_cdv > 0.30

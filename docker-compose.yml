@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: nastavnik_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nastavnik}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nastavnik_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-nastavnik_testing}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nastavnik_network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nastavnik_backend
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nastavnik}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nastavnik_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-nastavnik_testing}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      ML_SERVICE_URL: http://ml:8001
+      BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
+      BACKEND_PORT: ${BACKEND_PORT:-8000}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      - db
+    networks:
+      - nastavnik_network
+    restart: unless-stopped
+
+  ml:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    container_name: nastavnik_ml
+    environment:
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      DEEPSEEK_MAX_RETRIES: ${DEEPSEEK_MAX_RETRIES:-3}
+      DEEPSEEK_RETRY_BACKOFF_BASE: ${DEEPSEEK_RETRY_BACKOFF_BASE:-2}
+      ML_HOST: ${ML_HOST:-0.0.0.0}
+      ML_PORT: ${ML_PORT:-8001}
+    ports:
+      - "${ML_PORT:-8001}:8001"
+    networks:
+      - nastavnik_network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nastavnik_frontend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - nastavnik_network
+    restart: unless-stopped
+
+networks:
+  nastavnik_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

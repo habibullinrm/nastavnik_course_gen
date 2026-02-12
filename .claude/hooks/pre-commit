@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# pre-commit hook - Валидация кода перед коммитом
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Если хук запускается из .git/hooks/, ищем скрипты в .claude/hooks/
+if [[ "$SCRIPT_DIR" == *".git/hooks"* ]]; then
+    GIT_ROOT=$(git rev-parse --show-toplevel)
+    HOOKS_DIR="$GIT_ROOT/.claude/hooks"
+else
+    HOOKS_DIR="$SCRIPT_DIR"
+fi
+
+source "$HOOKS_DIR/scripts/common.sh"
+
+log_info "Запуск pre-commit hook..."
+
+# Получаем список staged файлов
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED_FILES" ]; then
+    log_info "Нет staged файлов для проверки"
+    exit 0
+fi
+
+# Фильтруем по типам
+PYTHON_FILES=()
+TYPESCRIPT_FILES=()
+SPECKIT_FILES=()
+
+while IFS= read -r file; do
+    if [[ "$file" =~ \.py$ ]]; then
+        PYTHON_FILES+=("$file")
+    elif [[ "$file" =~ \.(ts|tsx|js|jsx)$ ]]; then
+        TYPESCRIPT_FILES+=("$file")
+    elif [[ "$file" =~ ^specs/.*\.md$ ]]; then
+        SPECKIT_FILES+=("$file")
+    fi
+done <<< "$STAGED_FILES"
+
+ERRORS=0
+
+# Валидация Python файлов
+if [ ${#PYTHON_FILES[@]} -gt 0 ]; then
+    log_info "Найдено ${#PYTHON_FILES[@]} Python файлов для проверки"
+
+    if bash "$HOOKS_DIR/scripts/validate-python.sh" "${PYTHON_FILES[@]}"; then
+        :
+    else
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # Проверка async-first нарушений
+    if bash "$HOOKS_DIR/scripts/check-async-violations.sh" "${PYTHON_FILES[@]}"; then
+        :
+    else
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
+
+# Валидация TypeScript файлов
+if [ ${#TYPESCRIPT_FILES[@]} -gt 0 ]; then
+    log_info "Найдено ${#TYPESCRIPT_FILES[@]} TypeScript файлов для проверки"
+
+    if bash "$HOOKS_DIR/scripts/validate-typescript.sh"; then
+        :
+    else
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
+
+# Валидация SpecKit артефактов
+if [ ${#SPECKIT_FILES[@]} -gt 0 ]; then
+    log_info "Найдено ${#SPECKIT_FILES[@]} SpecKit артефактов для проверки"
+
+    if bash "$HOOKS_DIR/scripts/check-speckit-artifacts.sh" "${SPECKIT_FILES[@]}"; then
+        :
+    else
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
+
+# Итоговый результат
+if [ $ERRORS -gt 0 ]; then
+    echo ""
+    log_error "Pre-commit hook: найдены ошибки валидации"
+    log_info "Используйте 'git commit --no-verify' для пропуска проверки (не рекомендуется)"
+    exit 1
+fi
+
+log_success "Pre-commit hook: все проверки пройдены"
+exit 0
