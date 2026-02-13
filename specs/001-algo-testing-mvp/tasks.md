@@ -133,8 +133,8 @@
 
 ### Backend
 
-- [ ] T050 [US2] Реализовать сервис индикаторов полей: `backend/src/services/field_usage_service.py` — async функция get_field_usage(track_id) → анализ track_data: какие поля StudentProfile были использованы на каких шагах B1-B8, какие не использованы
-- [ ] T051 [US2] Добавить endpoint индикаторов полей: `backend/src/api/tracks.py` — GET /api/tracks/{id}/field-usage (возврат FieldUsageResponse)
+- [X] T050 [US2] Реализовать сервис индикаторов полей: `backend/src/services/field_usage_service.py` — async функция get_field_usage(track_id) → анализ track_data: какие поля StudentProfile были использованы на каких шагах B1-B8, какие не использованы
+- [X] T051 [US2] Добавить endpoint индикаторов полей: `backend/src/api/tracks.py` — GET /api/tracks/{id}/field-usage (возврат FieldUsageResponse)
 
 ### Frontend
 
@@ -143,7 +143,7 @@
 - [ ] T054 [P] [US2] Создать компонент индикаторов полей: `frontend/src/components/FieldUsage/FieldUsage.tsx` — таблица использованных полей (с указанием шагов) и неиспользованных полей; зелёный/серый цвет
 - [ ] T055 [P] [US2] Создать компонент расписания: `frontend/src/components/WeeklySchedule/WeeklySchedule.tsx` — понедельное расписание: неделя → дни → учебные единицы с длительностями; checkpoint'ы выделены
 - [ ] T056 [US2] Создать страницу просмотра трека: `frontend/src/app/tracks/[id]/page.tsx` — загрузка трека по ID, табы: «Дерево курса» (TreeView), «Расписание» (WeeklySchedule), «Метаданные» (TrackMetadata), «Поля профиля» (FieldUsage); результат валидации B8
-- [ ] T057 [P] [US2] Создать страницу списка треков: `frontend/src/app/tracks/page.tsx` — таблица треков (topic, статус, дата, длительность генерации); фильтр по профилю; клик → страница просмотра
+- [X] T057 [P] [US2] Создать страницу списка треков: `frontend/src/app/tracks/page.tsx` — таблица треков (topic, статус, дата, длительность генерации); фильтр по профилю; клик → страница просмотра
 - [ ] T057a [TEST] UI test Phase 4 (US2): Открыть трек → проверить TreeView (раскрытие компетенций→ЗУН→единиц), метаданные (версия алгоритма, LLM calls), field usage, WeeklySchedule
 
 **Checkpoint**: User Stories 1 И 2 работают — можно загрузить, сгенерировать и детально просмотреть трек

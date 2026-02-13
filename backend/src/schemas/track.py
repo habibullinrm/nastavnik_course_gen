@@ -53,10 +53,16 @@ class FieldUsageItem(BaseModel):
     field_name: str
     used: bool
     steps: list[str] = Field(default_factory=list)  # Which steps used this field
+    criticality: str = "OPTIONAL"  # CRITICAL, IMPORTANT, OPTIONAL
 
 
 class FieldUsageResponse(BaseModel):
     """Response for field usage analysis."""
     track_id: UUID
     used_fields: list[FieldUsageItem]
-    unused_fields: list[str]
+    unused_fields: list[FieldUsageItem]
+    total_fields: int
+    used_count: int
+    unused_count: int
+    critical_unused_count: int
+    important_unused_count: int

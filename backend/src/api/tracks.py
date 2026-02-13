@@ -17,11 +17,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.src.core.database import get_db
 from backend.src.schemas.track import (
+    FieldUsageResponse,
     GenerationStartedResponse,
     TrackDetail,
     TrackListResponse,
 )
-from backend.src.services import track_service
+from backend.src.services import field_usage_service, track_service
 
 router = APIRouter(prefix="/api/tracks", tags=["tracks"])
 
@@ -151,3 +152,30 @@ async def list_tracks(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/{track_id}/field-usage", response_model=FieldUsageResponse)
+async def get_track_field_usage(
+    track_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> FieldUsageResponse:
+    """
+    Анализирует использование полей профиля в треке.
+
+    Проверяет какие поля StudentProfile были использованы
+    на каких шагах B1-B8 и какие поля остались неиспользованными.
+
+    Args:
+        track_id: UUID трека для анализа
+        db: Сессия базы данных
+
+    Returns:
+        FieldUsageResponse: Анализ использования полей
+
+    Raises:
+        HTTPException: 404 если трек не найден
+    """
+    try:
+        return await field_usage_service.get_field_usage(track_id, db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
