@@ -54,7 +54,7 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> HealthResponse:
     # Проверка ML сервиса
     ml_service_available = False
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
             response = await client.get(f"{settings.ML_SERVICE_URL}/health")
             ml_service_available = response.status_code == 200
     except Exception:

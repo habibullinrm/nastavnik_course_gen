@@ -35,7 +35,7 @@
 - [X] T007 [P] Создать `frontend/Dockerfile` (Node 20, next build + start)
 - [X] T008 Создать `docker-compose.yml` с 4 сервисами: frontend (:3000), backend (:8000), ml (:8001), db (PostgreSQL 16, :5432); volumes для db; internal network
 - [X] T009 Создать `.env.example` с переменными: DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL, POSTGRES_*, BACKEND_*, ML_*, NEXT_PUBLIC_API_URL (согласно quickstart.md)
-- [ ] T009a [TEST] Smoke test Phase 1: docker compose up, проверка healthcheck всех 4 сервисов (frontend :3000, backend :8000, ml :8001, db :5432), нет ошибок в логах
+- [X] T009a [TEST] Smoke test Phase 1: docker compose up, проверка healthcheck всех 4 сервисов (frontend :3000, backend :8000, ml :8001, db :5432), нет ошибок в логах
 
 ---
 
@@ -63,7 +63,7 @@
 - [X] T025 [P] Создать базовые TypeScript-типы: `frontend/src/types/index.ts` — StudentProfile, PersonalizedTrack, TrackSummary, QAReport, ValidationResult, GenerationProgress (типы совпадают с backend API-ответами)
 - [X] T026 [P] Создать API-клиент frontend: `frontend/src/services/api.ts` — базовый fetch wrapper с обработкой ошибок, BASE_URL из env; функции: uploadProfile, generateTrack, getTrack, listTracks, и т.д.
 - [X] T027 Создать layout frontend: `frontend/src/app/layout.tsx` — корневой layout с Tailwind CSS, навигация (Загрузка | Треки | QA | Профили)
-- [ ] T027a [TEST] Integration test Phase 2: Alembic миграции применены, таблицы созданы (student_profiles, personalized_tracks, qa_reports, generation_logs), Pydantic-схемы валидируют тестовый JSON, DeepSeek client доступен
+- [X] T027a [TEST] Integration test Phase 2: Alembic миграции применены, таблицы созданы (student_profiles, personalized_tracks, qa_reports, generation_logs), Pydantic-схемы валидируют тестовый JSON, DeepSeek client доступен
 
 **Checkpoint**: Фундамент готов — можно начинать реализацию user stories
 

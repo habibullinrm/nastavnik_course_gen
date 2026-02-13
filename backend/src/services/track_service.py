@@ -194,8 +194,6 @@ async def list_tracks(
     ]
 
     return TrackListResponse(
-        items=items,
+        tracks=items,
         total=total,
-        limit=limit,
-        offset=offset,
     )

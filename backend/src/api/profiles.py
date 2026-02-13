@@ -13,7 +13,7 @@ from backend.src.schemas.student_profile import (
 )
 from backend.src.services import profile_service
 
-router = APIRouter(prefix="/profiles", tags=["profiles"])
+router = APIRouter(prefix="/api/profiles", tags=["profiles"])
 
 
 @router.post("", response_model=ProfileUploadResponse)
