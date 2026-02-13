@@ -26,14 +26,12 @@ app = FastAPI(
 )
 
 
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "service": "ml"}
+# Register routers
+from ml.src.api import pipeline, health
 
+app.include_router(pipeline.router)
+app.include_router(health.router)
 
-# TODO: Register routers here as they are implemented
-# from ml.src.api import pipeline, cdv
-# app.include_router(pipeline.router)
+# TODO: Register CDV router when implemented
+# from ml.src.api import cdv
 # app.include_router(cdv.router)

@@ -102,14 +102,14 @@
 
 ### ML — API endpoints
 
-- [ ] T041 [US1] Реализовать роутер pipeline: `ml/src/api/pipeline.py` — POST /pipeline/run (синхронный запуск, возврат PersonalizedTrack), POST /pipeline/run-stream (SSE: прогресс по шагам B1-B8 + финальный результат)
-- [ ] T042 [P] [US1] Реализовать health endpoint ML: `ml/src/api/health.py` — GET /health (статус + проверка доступности DeepSeek API через ping)
+- [X] T041 [US1] Реализовать роутер pipeline: `ml/src/api/pipeline.py` — POST /pipeline/run (синхронный запуск, возврат PersonalizedTrack), POST /pipeline/run-stream (SSE: прогресс по шагам B1-B8 + финальный результат)
+- [X] T042 [P] [US1] Реализовать health endpoint ML: `ml/src/api/health.py` — GET /health (статус + проверка доступности DeepSeek API через ping)
 
 ### Backend — генерация трека
 
 - [ ] T043 [US1] Реализовать сервис треков: `backend/src/services/track_service.py` — async функции: generate_track (вызов ML /pipeline/run-stream через httpx, сохранение результата в БД, обновление статуса), get_track, list_tracks; обработка ошибок ML-сервиса
 - [ ] T044 [US1] Реализовать роутер треков: `backend/src/api/tracks.py` — POST /api/tracks/generate (запуск генерации, возврат track_id + progress_url), GET /api/tracks/{id}, GET /api/tracks/{id}/progress (SSE проксирование с ML), GET /api/tracks (список с фильтрами); подключить в main.py
-- [ ] T044a [US1] Создать SQLAlchemy-модель GenerationLog: `backend/src/models/generation_log.py` — таблица generation_logs (id, track_id FK, step_name, step_output JSONB, llm_calls JSONB[], step_duration_sec, error_message, created_at); BTREE index на (track_id, step_name)
+- [X] T044a [US1] Создать SQLAlchemy-модель GenerationLog: `backend/src/models/generation_log.py` — таблица generation_logs (id, track_id FK, step_name, step_output JSONB, llm_calls JSONB[], step_duration_sec, error_message, created_at); BTREE index на (track_id, step_name)
 - [ ] T044b [US1] Создать роутер логирования: `backend/src/api/logs.py` — POST /api/logs/step (сохранение логов от ML), GET /api/logs/track/{track_id}, GET /api/logs/track/{track_id}/step/{step_name}; подключить в main.py
 - [ ] T045 [P] [US1] Реализовать health endpoint backend: `backend/src/api/health.py` — GET /api/health (статус БД + доступность ML-сервиса)
 
