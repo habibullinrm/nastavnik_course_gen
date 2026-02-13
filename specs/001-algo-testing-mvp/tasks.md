@@ -115,11 +115,11 @@
 
 ### Frontend — загрузка и генерация
 
-- [ ] T046 [US1] Создать компонент загрузки JSON: `frontend/src/components/ProfileUpload/ProfileUpload.tsx` — drag-and-drop / file input, отправка на POST /api/profiles, отображение validation результата (errors красным, warnings жёлтым), кнопка «Сгенерировать трек»
-- [ ] T047 [US1] Создать компонент прогресса генерации: `frontend/src/components/GenerationProgress/GenerationProgress.tsx` — подключение к SSE /api/tracks/{id}/progress, отображение текущего шага (B1...B8), прогресс-бар, лог шагов
-- [ ] T048 [US1] Создать страницу загрузки: `frontend/src/app/page.tsx` — главная страница с ProfileUpload; после успешной загрузки — кнопка генерации; при генерации — переход на страницу прогресса
-- [ ] T049 [US1] Создать страницу прогресса генерации: `frontend/src/app/tracks/generate/page.tsx` — GenerationProgress; после завершения — перенаправление на просмотр трека
-- [ ] T049a [TEST] E2E test Phase 3 (US1): Загрузить sample JSON из quickstart.md → запустить генерацию → проверить PersonalizedTrack (competencies, ksa_matrix, learning_units, schedule не пустые) → проверить БД (track + 8 generation_logs)
+- [X] T046 [US1] Создать компонент загрузки JSON: `frontend/src/components/ProfileUpload/ProfileUpload.tsx` — drag-and-drop / file input, отправка на POST /api/profiles, отображение validation результата (errors красным, warnings жёлтым), кнопка «Сгенерировать трек»
+- [X] T047 [US1] Создать компонент прогресса генерации: `frontend/src/components/GenerationProgress/GenerationProgress.tsx` — подключение к SSE /api/tracks/{id}/progress, отображение текущего шага (B1...B8), прогресс-бар, лог шагов
+- [X] T048 [US1] Создать страницу загрузки: `frontend/src/app/page.tsx` — главная страница с ProfileUpload; после успешной загрузки — кнопка генерации; при генерации — переход на страницу прогресса
+- [X] T049 [US1] Создать страницу прогресса генерации: `frontend/src/app/tracks/generate/page.tsx` — GenerationProgress; после завершения — перенаправление на просмотр трека
+- [X] T049a [TEST] E2E test Phase 3 (US1): Загрузить sample JSON из quickstart.md → запустить генерацию → проверить PersonalizedTrack (competencies, ksa_matrix, learning_units, schedule не пустые) → проверить БД (track + 8 generation_logs)
 
 **Checkpoint**: User Story 1 полностью функциональна — можно загрузить JSON, запустить генерацию, увидеть результат
 
