@@ -138,11 +138,11 @@
 
 ### Frontend
 
-- [ ] T052 [US2] Создать компонент TreeView: `frontend/src/components/TreeView/TreeView.tsx` — рекурсивный компонент с раскрытием/свёрткой узлов; уровни: Компетенции → ЗУН (Знания/Умения/Навыки) → Учебные единицы → Уровни → Недели → Дни → Учебные действия; длительность на каждом уровне
-- [ ] T053 [P] [US2] Создать компонент метаданных генерации: `frontend/src/components/TrackMetadata/TrackMetadata.tsx` — версия алгоритма, timestamp, длительность генерации, количество LLM-вызовов, использованные токены, входные параметры (topic, experience_level, desired_outcomes)
-- [ ] T054 [P] [US2] Создать компонент индикаторов полей: `frontend/src/components/FieldUsage/FieldUsage.tsx` — таблица использованных полей (с указанием шагов) и неиспользованных полей; зелёный/серый цвет
-- [ ] T055 [P] [US2] Создать компонент расписания: `frontend/src/components/WeeklySchedule/WeeklySchedule.tsx` — понедельное расписание: неделя → дни → учебные единицы с длительностями; checkpoint'ы выделены
-- [ ] T056 [US2] Создать страницу просмотра трека: `frontend/src/app/tracks/[id]/page.tsx` — загрузка трека по ID, табы: «Дерево курса» (TreeView), «Расписание» (WeeklySchedule), «Метаданные» (TrackMetadata), «Поля профиля» (FieldUsage); результат валидации B8
+- [X] T052 [US2] Создать компонент TreeView: `frontend/src/components/TreeView/TreeView.tsx` — рекурсивный компонент с раскрытием/свёрткой узлов; уровни: Компетенции → ЗУН (Знания/Умения/Навыки) → Учебные единицы → Уровни → Недели → Дни → Учебные действия; длительность на каждом уровне
+- [X] T053 [P] [US2] Создать компонент метаданных генерации: `frontend/src/components/TrackMetadata/TrackMetadata.tsx` — версия алгоритма, timestamp, длительность генерации, количество LLM-вызовов, использованные токены, входные параметры (topic, experience_level, desired_outcomes)
+- [X] T054 [P] [US2] Создать компонент индикаторов полей: `frontend/src/components/FieldUsage/FieldUsage.tsx` — таблица использованных полей (с указанием шагов) и неиспользованных полей; зелёный/серый цвет
+- [X] T055 [P] [US2] Создать компонент расписания: `frontend/src/components/WeeklySchedule/WeeklySchedule.tsx` — понедельное расписание: неделя → дни → учебные единицы с длительностями; checkpoint'ы выделены
+- [X] T056 [US2] Создать страницу просмотра трека: `frontend/src/app/tracks/[id]/page.tsx` — загрузка трека по ID, табы: «Дерево курса» (TreeView), «Расписание» (WeeklySchedule), «Метаданные» (TrackMetadata), «Поля профиля» (FieldUsage); результат валидации B8
 - [X] T057 [P] [US2] Создать страницу списка треков: `frontend/src/app/tracks/page.tsx` — таблица треков (topic, статус, дата, длительность генерации); фильтр по профилю; клик → страница просмотра
 - [ ] T057a [TEST] UI test Phase 4 (US2): Открыть трек → проверить TreeView (раскрытие компетенций→ЗУН→единиц), метаданные (версия алгоритма, LLM calls), field usage, WeeklySchedule
 

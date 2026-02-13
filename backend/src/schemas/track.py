@@ -29,15 +29,15 @@ class TrackDetail(BaseModel):
     """Detailed track info with full data."""
     id: UUID
     profile_id: UUID
-    qa_report_id: UUID | None
+    qa_report_id: UUID | None = None
     track_data: dict[str, Any]
     generation_metadata: dict[str, Any]
     algorithm_version: str
-    validation_b8: dict[str, Any] | None
+    validation_b8: dict[str, Any] | None = None
     status: str
-    error_message: str | None
-    generation_duration_sec: float | None
-    batch_index: int | None
+    error_message: str | None = None
+    generation_duration_sec: float | None = None
+    batch_index: int | None = None
     created_at: datetime
     updated_at: datetime
 
