@@ -39,21 +39,15 @@ app.add_middleware(
 )
 
 
-# Health check endpoint
-@app.get("/api/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "service": "backend"}
-
-
 # Register routers
-from backend.src.api import profiles
+from backend.src.api import profiles, tracks, logs, health
 
-app.include_router(profiles.router, prefix="/api")
+app.include_router(profiles.router)
+app.include_router(tracks.router)
+app.include_router(logs.router)
+app.include_router(health.router)
 
-# TODO: Register remaining routers as they are implemented
-# from backend.src.api import tracks, qa, logs, export
-# app.include_router(tracks.router, prefix="/api")
-# app.include_router(qa.router, prefix="/api")
-# app.include_router(logs.router, prefix="/api")
-# app.include_router(export.router, prefix="/api")
+# TODO: Register QA and Export routers when implemented
+# from backend.src.api import qa, export
+# app.include_router(qa.router)
+# app.include_router(export.router)
