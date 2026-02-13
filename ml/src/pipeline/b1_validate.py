@@ -34,8 +34,11 @@ async def run_b1_validate(
         prompt=prompt,
         response_model=ValidatedStudentProfile,
         temperature=0.3,  # Lower temperature for validation
-        max_tokens=2000,
+        max_tokens=8000,  # Increased for full profile with all fields
     )
+
+    # Add original profile manually (not included in DeepSeek response to save tokens)
+    result.original_profile = profile
 
     logger.info(
         f"B1 complete: effective_level={result.effective_level}, "

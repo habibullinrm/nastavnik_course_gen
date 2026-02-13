@@ -12,6 +12,7 @@ from pathlib import Path
 import os
 
 os.environ["MOCK_LLM"] = "true"
+os.environ["DISABLE_BACKEND_LOGGING"] = "true"  # Skip backend logging in mock mode
 
 
 async def main():
@@ -30,9 +31,18 @@ async def main():
     profile_path = Path("../docs/test_profile_1.json")
     if not profile_path.exists():
         profile_path = Path("docs/test_profile_1.json")
+    if not profile_path.exists():
+        profile_path = Path("test_profile_1.json")
+    if not profile_path.exists():
+        profile_path = Path("/app/test_profile_1.json")
 
     if not profile_path.exists():
         print("❌ Error: test_profile_1.json not found")
+        print("Tried paths:")
+        print("  - ../docs/test_profile_1.json")
+        print("  - docs/test_profile_1.json")
+        print("  - test_profile_1.json")
+        print("  - /app/test_profile_1.json")
         return 1
 
     with open(profile_path) as f:

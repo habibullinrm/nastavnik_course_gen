@@ -32,6 +32,8 @@ services:
       BACKEND_PORT: ${BACKEND_PORT:-8000}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
     depends_on:
       - db
     networks:
@@ -52,7 +54,9 @@ services:
       ML_HOST: ${ML_HOST:-0.0.0.0}
       ML_PORT: ${ML_PORT:-8001}
     ports:
-      - "${ML_PORT:-8001}:8001"
+      - "8002:8001"
+    volumes:
+      - ./ml:/app
     networks:
       - nastavnik_network
     restart: unless-stopped
@@ -68,6 +72,10 @@ services:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
     depends_on:
       - backend
     networks:

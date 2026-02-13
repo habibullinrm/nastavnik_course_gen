@@ -34,8 +34,11 @@ async def run_pipeline_sync(request: PipelineRunRequest) -> PipelineRunResponse:
     Raises:
         HTTPException: 500 если pipeline упал с ошибкой
     """
+    from uuid import UUID
+
     try:
-        result = await run_pipeline(request.profile)
+        track_id = UUID(request.track_id)
+        result = await run_pipeline(request.profile, track_id, request.algorithm_version)
         return result
     except Exception as e:
         raise HTTPException(

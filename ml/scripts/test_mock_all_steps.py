@@ -36,6 +36,8 @@ async def test_all_steps():
             "B6_problem_formulations",
             "Create problem formulations for each cluster...",
         ),
+        ("B7_schedule", "Assemble the weekly schedule from learning units..."),
+        ("B8_validation", "Validate the complete personalized track..."),
     ]
 
     results = []

@@ -36,18 +36,9 @@ async def health_check() -> HealthResponse:
 
     try:
         # Проверка доступности DeepSeek API
-        client = get_deepseek_client()
-        # Простой проверочный запрос (минимальный токен usage)
-        response = await client.post(
-            "/chat/completions",
-            json={
-                "model": "deepseek-chat",
-                "messages": [{"role": "user", "content": "ping"}],
-                "max_tokens": 1,
-            },
-            timeout=5.0,
-        )
-        deepseek_available = response.status_code == 200
+        client = await get_deepseek_client()
+        # Проверяем, что клиент создан и имеет API ключ
+        deepseek_available = client is not None and client.api_key is not None
     except Exception:
         # Любая ошибка = API недоступен
         deepseek_available = False

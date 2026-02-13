@@ -1,0 +1,236 @@
+{
+  "topic": "Элементы математической логики",
+  "subject_area": "Математика",
+  "topic_scope": "Таблицы истинности, логические операции (И, ИЛИ, НЕ, импликация, эквивалентность), кванторы (∀, ∃), отрицание утверждений с кванторами",
+  "role": "Студент технического вуза, 2 курс",
+  "experience_level": "beginner",
+  "formal_education": "Была вводная лекция по дискретной математике, но многого не понял",
+  "identified_risks": [
+    "Чувствую, что отстаю от программы",
+    "Не хватает базовых знаний",
+    "Путаю основные понятия"
+  ],
+  "motivation_external": "Сдать экзамен по дискретной математике на 4-5",
+  "motivation_internal": "Хочу разобраться в основах для будущих предметов (теория алгоритмов, базы данных)",
+  "goal_type": "mixed",
+  "has_deadline": true,
+  "deadline_date": "2026-06-15",
+  "desired_outcomes": [
+    "Решать задачи на таблицы истинности",
+    "Строить отрицания с кванторами",
+    "Доказывать логические законы через таблицы истинности",
+    "Уверенно выполнять экзаменационные задания"
+  ],
+  "target_context": "Академический: подготовка к экзамену и понимание теории для дальнейших курсов",
+  "outcome_source": "mixed",
+  "target_tasks": [
+    {
+      "id": "t1",
+      "description": "Строить таблицы истинности для сложных формул",
+      "complexity_rank": 1
+    },
+    {
+      "id": "t2",
+      "description": "Доказывать логические законы через таблицы",
+      "complexity_rank": 2
+    },
+    {
+      "id": "t3",
+      "description": "Строить отрицания для высказываний с кванторами",
+      "complexity_rank": 3
+    }
+  ],
+  "tasks_source": "mixed",
+  "task_hierarchy": [
+    {
+      "id": "t1",
+      "description": "Строить таблицы истинности для сложных формул",
+      "complexity_rank": 1
+    },
+    {
+      "id": "t2",
+      "description": "Доказывать логические законы через таблицы",
+      "complexity_rank": 2
+    },
+    {
+      "id": "t3",
+      "description": "Строить отрицания для высказываний с кванторами",
+      "complexity_rank": 3
+    }
+  ],
+  "easiest_task_id": "t1",
+  "peak_task_id": "t3",
+  "subtasks": [
+    {
+      "id": "st1",
+      "description": "Определить структуру утверждения: где кванторы",
+      "parent_task_id": "t3",
+      "required_knowledge": ["кванторы", "структура логических утверждений"],
+      "required_skills": ["анализ структуры", "выделение компонентов"]
+    },
+    {
+      "id": "st2",
+      "description": "Применить правило: ¬∀ = ∃¬",
+      "parent_task_id": "t3",
+      "required_knowledge": ["правила отрицания кванторов", "законы де Моргана"],
+      "required_skills": ["подстановка", "преобразование формул"]
+    },
+    {
+      "id": "st3",
+      "description": "Последовательно спускать отрицание внутрь",
+      "parent_task_id": "t3",
+      "required_knowledge": ["порядок применения правил"],
+      "required_skills": ["пошаговое преобразование"]
+    },
+    {
+      "id": "st4",
+      "description": "Упрощать получившееся выражение",
+      "parent_task_id": "t3",
+      "required_knowledge": ["законы логики"],
+      "required_skills": ["упрощение формул"]
+    }
+  ],
+  "subtasks_source": "system_generated",
+  "already_known_subtasks": [],
+  "primary_context": "academic",
+  "secondary_context": "Понимание логики в программировании",
+  "context_type": "academic",
+  "current_approach": "Пытаюсь вспомнить таблицу для импликации, путаю, когда она ложная. Делаю столбец для ¬B, потом пытаюсь соединить. Часто ошибаюсь в порядке действий.",
+  "approach_gaps": [
+    "Не понимаю порядок построения столбцов",
+    "Путаю значения импликации",
+    "Не знаю правил упрощения",
+    "Не понимаю, как работают кванторы"
+  ],
+  "diagnostic_result": "misconceptions",
+  "key_barriers": [
+    {
+      "id": "b1",
+      "description": "Не понимаю, почему импликация истинна при ложной посылке",
+      "related_task_id": "t1",
+      "barrier_type": "conceptual"
+    },
+    {
+      "id": "b2",
+      "description": "Путаю операции И/ИЛИ между собой",
+      "related_task_id": "t1",
+      "barrier_type": "conceptual"
+    },
+    {
+      "id": "b3",
+      "description": "Не понимаю, что такое кванторы 'для всех' и 'существует'",
+      "related_task_id": "t3",
+      "barrier_type": "conceptual"
+    },
+    {
+      "id": "b4",
+      "description": "Не знаю, как переворачивать кванторы при отрицании",
+      "related_task_id": "t3",
+      "barrier_type": "procedural"
+    }
+  ],
+  "barriers_source": "user",
+  "confusing_concepts": [
+    {
+      "id": "c1",
+      "term": "Импликация",
+      "confusion_description": "Почему истинна при ложной посылке? Интуитивно не понятно"
+    },
+    {
+      "id": "c2",
+      "term": "Кванторы",
+      "confusion_description": "Как читать ∀ и ∃? В чем разница?"
+    },
+    {
+      "id": "c3",
+      "term": "Эквивалентность",
+      "confusion_description": "Чем отличается от равенства? Когда использовать?"
+    },
+    {
+      "id": "c4",
+      "term": "Отрицание кванторов",
+      "confusion_description": "Какое правило применять? Куда переносить отрицание?"
+    }
+  ],
+  "concepts_source": "user",
+  "theory_format_preference": "examples_first",
+  "theory_format_details": "Помогли конспекты-шпаргалки, где формулы были с примерами на одной схеме. Хорошо работают таблицы и схемы с пошаговыми разборами.",
+  "best_material_reference": "Конспект с таблицей всех логических операций и примерами для каждой",
+  "instruction_format": ["checklist", "video"],
+  "feedback_type": ["error_with_explanation", "compare_with_standard"],
+  "practice_format": ["compare_with_standard", "step_by_step"],
+  "daily_practice_minutes": 15,
+  "practice_windows": [
+    {
+      "time_of_day": "evening",
+      "duration_minutes": 15,
+      "device": "laptop"
+    },
+    {
+      "time_of_day": "morning",
+      "duration_minutes": 10,
+      "device": "phone"
+    }
+  ],
+  "needs_reminder": true,
+  "mastery_signals": [
+    "Перестану путать кванторы",
+    "Смогу решать без шпаргалок",
+    "Буду уверенно решать задачи на экзамене"
+  ],
+  "support_tools": ["progress_tracker", "reminder", "checklist"],
+  "weekly_hours": 5,
+  "schedule": [
+    {
+      "day_of_week": "monday",
+      "available_minutes": 40
+    },
+    {
+      "day_of_week": "tuesday",
+      "available_minutes": 40
+    },
+    {
+      "day_of_week": "wednesday",
+      "available_minutes": 40
+    },
+    {
+      "day_of_week": "thursday",
+      "available_minutes": 40
+    },
+    {
+      "day_of_week": "friday",
+      "available_minutes": 30
+    },
+    {
+      "day_of_week": "saturday",
+      "available_minutes": 120
+    },
+    {
+      "day_of_week": "sunday",
+      "available_minutes": 60
+    }
+  ],
+  "learning_format": "mentored",
+  "support_channel": "чат с преподавателем",
+  "success_criteria": [
+    {
+      "id": "sc1",
+      "description": "Решить ≥80% задач пробника по математической логике",
+      "measurable": true,
+      "metric": "accuracy >= 0.8"
+    },
+    {
+      "id": "sc2",
+      "description": "Сдать экзамен на оценку 4 или 5",
+      "measurable": true,
+      "metric": "exam_grade >= 4"
+    },
+    {
+      "id": "sc3",
+      "description": "Объяснить другому студенту, как работают кванторы",
+      "measurable": false,
+      "metric": "peer_teaching_successful"
+    }
+  ],
+  "novice_mode": true
+}

@@ -1,0 +1,125 @@
+{
+  "weeks": [
+    {
+      "week_number": 1,
+      "level": "foundational",
+      "theme": "Основы темы",
+      "weekly_goals": [
+        "Понять базовые концепции",
+        "Освоить начальные навыки"
+      ],
+      "days": [
+        {
+          "day_number": 1,
+          "activities": [
+            {
+              "unit_id": "tu1",
+              "type": "theory",
+              "duration_minutes": 45,
+              "content_summary": "Введение в тему"
+            }
+          ],
+          "total_duration_minutes": 45
+        },
+        {
+          "day_number": 2,
+          "activities": [
+            {
+              "unit_id": "pu1",
+              "type": "practice",
+              "duration_minutes": 60,
+              "content_summary": "Практическое задание 1"
+            }
+          ],
+          "total_duration_minutes": 60
+        }
+      ],
+      "checkpoint": null
+    },
+    {
+      "week_number": 2,
+      "level": "intermediate",
+      "theme": "Углубление знаний",
+      "weekly_goals": [
+        "Развить продвинутые навыки",
+        "Применить знания на практике"
+      ],
+      "days": [
+        {
+          "day_number": 1,
+          "activities": [
+            {
+              "unit_id": "tu2",
+              "type": "theory",
+              "duration_minutes": 50,
+              "content_summary": "Продвинутые концепции"
+            }
+          ],
+          "total_duration_minutes": 50
+        }
+      ],
+      "checkpoint": {
+        "week": 2,
+        "title": "Промежуточная проверка",
+        "evaluation_criteria": [
+          "Понимание базовых концепций",
+          "Способность применять навыки"
+        ]
+      }
+    }
+  ],
+  "total_weeks": 2,
+  "checkpoints": [
+    {
+      "week": 2,
+      "title": "Промежуточная проверка",
+      "evaluation_criteria": [
+        "Понимание базовых концепций",
+        "Способность применять навыки"
+      ]
+    }
+  ],
+  "final_assessment": {
+    "type": "project",
+    "description": "Итоговый проект по теме",
+    "criteria": [
+      "Полнота решения",
+      "Качество кода",
+      "Демонстрация понимания"
+    ]
+  },
+  "support_plan": {
+    "scaffolding_techniques": [
+      "Постепенное увеличение сложности",
+      "Наводящие вопросы",
+      "Примеры и шаблоны"
+    ],
+    "feedback_points": [
+      "После каждого практического задания",
+      "В конце недели"
+    ],
+    "resources": [
+      "Дополнительные материалы",
+      "Видеоуроки",
+      "Сообщество для вопросов"
+    ]
+  },
+  "progress_milestones": [
+    {
+      "week": 1,
+      "title": "Освоение базовых концепций",
+      "criteria": [
+        "Понимание терминологии",
+        "Выполнение первых заданий"
+      ]
+    },
+    {
+      "week": 2,
+      "title": "Применение знаний",
+      "criteria": [
+        "Самостоятельное решение задач",
+        "Прохождение checkpoint"
+      ]
+    }
+  ]
+}

@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field
 
 class ValidatedStudentProfile(BaseModel):
     """Output of B1: validated and enriched profile."""
-    # Original profile data (all fields from input)
-    original_profile: dict
+    # Original profile data (all fields from input) - optional to reduce token usage
+    original_profile: dict | None = None
 
     # Validation status
     validation_status: Literal["valid", "valid_with_warnings", "invalid"]

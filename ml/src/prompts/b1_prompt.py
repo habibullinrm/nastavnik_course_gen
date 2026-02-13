@@ -38,7 +38,6 @@ TASK: Validate and enrich this profile with the following steps:
 4. **Output Requirements**:
    Return a JSON object with this exact structure:
    {{
-     "original_profile": <the input profile>,
      "validation_status": "valid" | "valid_with_warnings" | "invalid",
      "validation_errors": [<list of critical errors>],
      "validation_warnings": [<list of warnings>],
@@ -48,5 +47,8 @@ TASK: Validate and enrich this profile with the following steps:
      "total_time_budget_minutes": <integer>
    }}
 
-IMPORTANT: Respond ONLY with valid JSON. No explanations outside the JSON.
+IMPORTANT:
+- Respond ONLY with valid JSON
+- Do NOT include the original_profile in response - we already have it
+- No explanations or markdown formatting
 """

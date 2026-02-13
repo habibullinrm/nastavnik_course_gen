@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -17,11 +18,13 @@ class StepLogger:
 
     def __init__(self, backend_url: str = "http://backend:8000"):
         self.backend_url = backend_url
-        self.client = httpx.AsyncClient(base_url=backend_url, timeout=30.0)
+        self.disable_backend = os.getenv("DISABLE_BACKEND_LOGGING", "false").lower() == "true"
+        self.client = httpx.AsyncClient(base_url=backend_url, timeout=30.0) if not self.disable_backend else None
 
     async def close(self):
         """Close the HTTP client."""
-        await self.client.aclose()
+        if self.client:
+            await self.client.aclose()
 
     async def log_step(
         self,
@@ -58,14 +61,17 @@ class StepLogger:
             "error_message": error_message,
         }
 
-        # Try to send to backend
-        try:
-            response = await self.client.post("/api/logs/step", json=log_data)
-            response.raise_for_status()
-            logger.info(f"Successfully logged step {step_name} for track {track_id}")
-        except Exception as e:
-            logger.error(f"Failed to log step {step_name} to backend: {e}")
-            # Continue anyway - file logging might still work
+        # Try to send to backend (unless disabled)
+        if not self.disable_backend:
+            try:
+                response = await self.client.post("/api/logs/step", json=log_data)
+                response.raise_for_status()
+                logger.info(f"Successfully logged step {step_name} for track {track_id}")
+            except Exception as e:
+                logger.error(f"Failed to log step {step_name} to backend: {e}")
+                # Continue anyway - file logging might still work
+        else:
+            logger.debug(f"Backend logging disabled, skipping step {step_name}")
 
         # Optionally save to file
         if save_to_file:

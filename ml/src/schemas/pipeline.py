@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 class PipelineRunRequest(BaseModel):
     """Request to run the pipeline B1-B8."""
     profile: dict[str, Any]
+    track_id: str
     algorithm_version: str = "v1.0.0"
 
 

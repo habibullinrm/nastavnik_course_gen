@@ -1,0 +1,57 @@
+{
+  "overall_valid": true,
+  "checks": [
+    {
+      "name": "competency_coverage",
+      "status": "pass",
+      "severity": "critical",
+      "details": "Все компетенции покрыты учебными единицами"
+    },
+    {
+      "name": "ksa_coverage",
+      "status": "pass",
+      "severity": "critical",
+      "details": "Все ЗУН покрыты в расписании"
+    },
+    {
+      "name": "dependency_order",
+      "status": "pass",
+      "severity": "critical",
+      "details": "Порядок изучения соответствует зависимостям"
+    },
+    {
+      "name": "time_allocation",
+      "status": "pass",
+      "severity": "important",
+      "details": "Время распределено в рамках доступного бюджета"
+    },
+    {
+      "name": "profile_alignment",
+      "status": "pass",
+      "severity": "critical",
+      "details": "Трек соответствует профилю учащегося"
+    },
+    {
+      "name": "learning_progression",
+      "status": "pass",
+      "severity": "important",
+      "details": "Прогрессия от простого к сложному соблюдена"
+    },
+    {
+      "name": "checkpoint_placement",
+      "status": "pass",
+      "severity": "important",
+      "details": "Контрольные точки размещены корректно"
+    },
+    {
+      "name": "fsm_readiness",
+      "status": "warning",
+      "severity": "optional",
+      "details": "FSM-правила присутствуют для большинства единиц"
+    }
+  ],
+  "critical_failures": 0,
+  "warnings": 1,
+  "retry_count": 0,
+  "final_status": "validated_with_warnings"
+}

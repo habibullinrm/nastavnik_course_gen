@@ -71,7 +71,11 @@ async def generate_track(
         try:
             response = await client.post(
                 f"{settings.ML_SERVICE_URL}/pipeline/run",
-                json={"profile": profile.data},
+                json={
+                    "profile": profile.data,
+                    "track_id": str(track.id),
+                    "algorithm_version": "v1.0",
+                },
             )
             response.raise_for_status()
             

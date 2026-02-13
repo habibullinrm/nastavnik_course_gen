@@ -91,7 +91,7 @@ def upgrade() -> None:
         sa.Column('track_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('step_name', sa.String(length=50), nullable=False),
         sa.Column('step_output', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column('llm_calls', postgresql.ARRAY(postgresql.JSONB(astext_type=sa.Text())), nullable=False),
+        sa.Column('llm_calls', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column('step_duration_sec', sa.Float(), nullable=False),
         sa.Column('error_message', sa.Text(), nullable=True),
         sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False, server_default=sa.text('now()')),
