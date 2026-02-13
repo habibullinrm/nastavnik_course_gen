@@ -12,17 +12,7 @@
 
 import { useState } from 'react';
 import { uploadProfile } from '@/services/api';
-
-interface ValidationError {
-  field: string;
-  message: string;
-}
-
-interface ValidationResult {
-  valid: boolean;
-  errors: ValidationError[];
-  warnings: ValidationError[];
-}
+import type { ValidationResult } from '@/types';
 
 interface ProfileUploadProps {
   onUploadSuccess?: (profileId: string) => void;
@@ -50,16 +40,13 @@ export default function ProfileUpload({ onUploadSuccess }: ProfileUploadProps) {
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      const response = await uploadProfile(file);
 
-      const response = await uploadProfile(formData);
-      
-      setProfileId(response.profile_id);
-      setValidation(response.validation);
+      setProfileId(response.id);
+      setValidation(response.validation_result);
 
-      if (response.validation.valid && onUploadSuccess) {
-        onUploadSuccess(response.profile_id);
+      if (response.validation_result.valid && onUploadSuccess) {
+        onUploadSuccess(response.id);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
@@ -115,7 +102,7 @@ export default function ProfileUpload({ onUploadSuccess }: ProfileUploadProps) {
               <p className="font-bold">Ошибки:</p>
               <ul className="list-disc list-inside">
                 {validation.errors.map((err, idx) => (
-                  <li key={idx}>{err.field}: {err.message}</li>
+                  <li key={idx}>{err}</li>
                 ))}
               </ul>
             </div>
@@ -126,7 +113,7 @@ export default function ProfileUpload({ onUploadSuccess }: ProfileUploadProps) {
               <p className="font-bold">Предупреждения:</p>
               <ul className="list-disc list-inside">
                 {validation.warnings.map((warn, idx) => (
-                  <li key={idx}>{warn.field}: {warn.message}</li>
+                  <li key={idx}>{warn}</li>
                 ))}
               </ul>
             </div>

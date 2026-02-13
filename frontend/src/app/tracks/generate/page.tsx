@@ -8,11 +8,11 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import GenerationProgress from '@/components/GenerationProgress/GenerationProgress';
 import { generateTrack } from '@/services/api';
 
-export default function GeneratePage() {
+function GeneratePageContent() {
   const searchParams = useSearchParams();
   const profileId = searchParams.get('profile_id');
   const [trackId, setTrackId] = useState<string | null>(null);
@@ -67,5 +67,13 @@ export default function GeneratePage() {
         }}
       />
     </main>
+  );
+}
+
+export default function GeneratePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen p-8"><div className="max-w-2xl mx-auto"><p className="text-center">Загрузка...</p></div></div>}>
+      <GeneratePageContent />
+    </Suspense>
   );
 }

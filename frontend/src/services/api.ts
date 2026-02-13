@@ -5,6 +5,7 @@
 import type {
   StudentProfile,
   ProfileSummary,
+  ProfileUploadResponse,
   PersonalizedTrack,
   TrackSummary,
   QAReport,
@@ -15,7 +16,7 @@ import type {
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 class APIError extends Error {
-  constructor(public status: number, message: string, public details?: any) {
+  constructor(public status: number, message: string, public details?: unknown) {
     super(message)
     this.name = 'APIError'
   }
@@ -54,11 +55,11 @@ async function fetchAPI<T>(
 }
 
 // Profile endpoints
-export async function uploadProfile(file: File): Promise<StudentProfile> {
+export async function uploadProfile(file: File): Promise<ProfileUploadResponse> {
   const formData = new FormData()
   formData.append('file', file)
 
-  return fetchAPI<StudentProfile>('/api/profiles', {
+  return fetchAPI<ProfileUploadResponse>('/api/profiles', {
     method: 'POST',
     body: formData,
   })

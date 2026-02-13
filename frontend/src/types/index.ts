@@ -8,12 +8,21 @@ export interface ValidationResult {
   warnings: string[]
 }
 
+export interface ProfileUploadResponse {
+  id: string
+  filename: string
+  topic: string
+  experience_level: string | null
+  validation_result: ValidationResult
+  created_at: string
+}
+
 export interface StudentProfile {
   id: string
   filename: string
   topic: string
   experience_level: string | null
-  data: Record<string, any>
+  data: Record<string, unknown>
   validation_result: ValidationResult
   created_at: string
   updated_at: string
@@ -49,10 +58,10 @@ export interface PersonalizedTrack {
   id: string
   profile_id: string
   qa_report_id: string | null
-  track_data: Record<string, any>
+  track_data: Record<string, unknown>
   generation_metadata: GenerationMetadata
   algorithm_version: string
-  validation_b8: Record<string, any> | null
+  validation_b8: Record<string, unknown> | null
   status: string
   error_message: string | null
   generation_duration_sec: number | null
