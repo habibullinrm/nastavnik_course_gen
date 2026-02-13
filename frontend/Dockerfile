@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy dependency files
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm ci --only=production
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -16,7 +16,10 @@ WORKDIR /app
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
-COPY --from=deps /app/node_modules ./node_modules
+# Copy dependency files and install all dependencies (including dev)
+COPY package.json package-lock.json* ./
+RUN npm ci
+
 COPY . .
 
 # Build application
@@ -26,21 +29,25 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built application
+# Copy necessary files for Next.js
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy built application
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
+COPY --from=deps /app/node_modules ./node_modules
 
 USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
