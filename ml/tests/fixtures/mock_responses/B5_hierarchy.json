@@ -1,0 +1,41 @@
+{
+  "levels": [
+    {
+      "level": "foundational",
+      "clusters": [
+        "cluster1"
+      ],
+      "estimated_weeks": 2
+    },
+    {
+      "level": "intermediate",
+      "clusters": [
+        "cluster2"
+      ],
+      "estimated_weeks": 2
+    },
+    {
+      "level": "advanced",
+      "clusters": [
+        "cluster3"
+      ],
+      "estimated_weeks": 2
+    }
+  ],
+  "unit_sequence": [
+    "tu1",
+    "pu1",
+    "au1",
+    "tu2",
+    "pu2",
+    "au2",
+    "tu3",
+    "pu3",
+    "au3",
+    "tu4",
+    "pu4",
+    "au4"
+  ],
+  "time_compression_applied": true,
+  "total_weeks": 6
+}
