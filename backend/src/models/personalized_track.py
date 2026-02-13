@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, TIMESTAMP, Float, Integer, ForeignKey, text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.src.core.database import Base
 
@@ -51,6 +51,13 @@ class PersonalizedTrack(Base):
         nullable=False,
         server_default=text("now()"),
         onupdate=datetime.utcnow,
+    )
+
+    # Relationships
+    logs: Mapped[list["GenerationLog"]] = relationship(
+        "GenerationLog",
+        back_populates="track",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:

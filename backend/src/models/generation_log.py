@@ -7,7 +7,8 @@ SQLAlchemy модель для логов генерации треков.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import UUID, JSONB, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.src.core.database import Base
