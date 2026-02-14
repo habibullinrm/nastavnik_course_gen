@@ -3,122 +3,441 @@
     {
       "week_number": 1,
       "level": "foundational",
-      "theme": "Основы темы",
+      "theme": "Основы логических операций и таблиц истинности",
       "weekly_goals": [
-        "Понять базовые концепции",
-        "Освоить начальные навыки"
+        "Понять семантику базовых операций (И, ИЛИ, НЕ, импликация)",
+        "Научиться строить простые таблицы истинности",
+        "Освоить приоритет логических операций"
       ],
       "days": [
         {
-          "day_number": 1,
-          "activities": [
-            {
-              "unit_id": "tu1",
-              "type": "theory",
-              "duration_minutes": 45,
-              "content_summary": "Введение в тему"
-            }
-          ],
-          "total_duration_minutes": 45
+          "day_of_week": "monday",
+          "learning_units": ["tu1", "pu1"],
+          "total_minutes": 40
         },
         {
-          "day_number": 2,
-          "activities": [
-            {
-              "unit_id": "pu1",
-              "type": "practice",
-              "duration_minutes": 60,
-              "content_summary": "Практическое задание 1"
-            }
-          ],
-          "total_duration_minutes": 60
+          "day_of_week": "tuesday",
+          "learning_units": ["tu2"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "wednesday",
+          "learning_units": ["pu2", "pu3"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "thursday",
+          "learning_units": ["tu3"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "friday",
+          "learning_units": ["pu4"],
+          "total_minutes": 30
+        },
+        {
+          "day_of_week": "saturday",
+          "learning_units": ["tu4", "pu5", "pu6"],
+          "total_minutes": 120
+        },
+        {
+          "day_of_week": "sunday",
+          "learning_units": ["au1"],
+          "total_minutes": 60
         }
       ],
       "checkpoint": null
     },
     {
       "week_number": 2,
-      "level": "intermediate",
-      "theme": "Углубление знаний",
+      "level": "foundational",
+      "theme": "Кванторы и отрицание логических высказываний",
       "weekly_goals": [
-        "Развить продвинутые навыки",
-        "Применить знания на практике"
+        "Понять смысл кванторов ∀ (для всех) и ∃ (существует)",
+        "Освоить правила отрицания кванторов",
+        "Научиться строить отрицания сложных утверждений"
       ],
       "days": [
         {
-          "day_number": 1,
-          "activities": [
-            {
-              "unit_id": "tu2",
-              "type": "theory",
-              "duration_minutes": 50,
-              "content_summary": "Продвинутые концепции"
-            }
-          ],
-          "total_duration_minutes": 50
+          "day_of_week": "monday",
+          "learning_units": ["tu5", "pu7"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "tuesday",
+          "learning_units": ["tu6"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "wednesday",
+          "learning_units": ["pu8"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "thursday",
+          "learning_units": ["tu7", "pu9"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "friday",
+          "learning_units": ["pu10"],
+          "total_minutes": 30
+        },
+        {
+          "day_of_week": "saturday",
+          "learning_units": ["tu8", "pu11"],
+          "total_minutes": 120
+        },
+        {
+          "day_of_week": "sunday",
+          "learning_units": ["au2"],
+          "total_minutes": 60
         }
       ],
       "checkpoint": {
         "week_number": 2,
-        "title": "Промежуточная проверка",
+        "title": "Checkpoint 1: Фундаментальные операции и кванторы",
         "assessment_tasks": [
-          "Проверка понимания базовых концепций",
-          "Оценка способности применять навыки"
+          "Построить таблицы истинности для формул с 3-4 переменными",
+          "Применить правила отрицания кванторов к предикатным формулам",
+          "Объяснить разницу между ∀ и ∃ на примерах"
+        ]
+      }
+    },
+    {
+      "week_number": 3,
+      "level": "intermediate",
+      "theme": "Эквивалентность формул и логические законы",
+      "weekly_goals": [
+        "Освоить понятие логической эквивалентности",
+        "Изучить основные законы логики (де Моргана, дистрибутивности)",
+        "Научиться упрощать логические формулы"
+      ],
+      "days": [
+        {
+          "day_of_week": "monday",
+          "learning_units": ["tu9"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "tuesday",
+          "learning_units": ["pu12", "pu13"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "wednesday",
+          "learning_units": ["tu10"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "thursday",
+          "learning_units": ["pu14"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "friday",
+          "learning_units": ["pu15"],
+          "total_minutes": 30
+        },
+        {
+          "day_of_week": "saturday",
+          "learning_units": ["tu11", "pu16"],
+          "total_minutes": 120
+        },
+        {
+          "day_of_week": "sunday",
+          "learning_units": ["au3"],
+          "total_minutes": 60
+        }
+      ],
+      "checkpoint": {
+        "week_number": 3,
+        "title": "Checkpoint 2: Эквивалентность и преобразования",
+        "assessment_tasks": [
+          "Доказать эквивалентность формул через таблицы истинности",
+          "Упростить сложные формулы с помощью законов логики",
+          "Преобразовать формулы к нормальным формам (КНФ/ДНФ)"
+        ]
+      }
+    },
+    {
+      "week_number": 4,
+      "level": "intermediate",
+      "theme": "Предикаты и кванторная логика",
+      "weekly_goals": [
+        "Освоить работу с предикатами от нескольких переменных",
+        "Научиться строить отрицания для вложенных кванторов",
+        "Применять правила замены связанных переменных"
+      ],
+      "days": [
+        {
+          "day_of_week": "monday",
+          "learning_units": ["tu12"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "tuesday",
+          "learning_units": ["pu17"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "wednesday",
+          "learning_units": ["tu13", "pu18"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "thursday",
+          "learning_units": ["pu19"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "friday",
+          "learning_units": ["pu20"],
+          "total_minutes": 30
+        },
+        {
+          "day_of_week": "saturday",
+          "learning_units": ["tu14", "pu21"],
+          "total_minutes": 120
+        },
+        {
+          "day_of_week": "sunday",
+          "learning_units": ["au4"],
+          "total_minutes": 60
+        }
+      ],
+      "checkpoint": null
+    },
+    {
+      "week_number": 5,
+      "level": "advanced",
+      "theme": "Формальные доказательства и вывод",
+      "weekly_goals": [
+        "Освоить метод резолюций для доказательства теорем",
+        "Научиться строить формальные выводы",
+        "Применять правила вывода (modus ponens, modus tollens)"
+      ],
+      "days": [
+        {
+          "day_of_week": "monday",
+          "learning_units": ["tu15"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "tuesday",
+          "learning_units": ["pu22", "pu23"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "wednesday",
+          "learning_units": ["tu16"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "thursday",
+          "learning_units": ["pu24"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "friday",
+          "learning_units": ["pu25"],
+          "total_minutes": 30
+        },
+        {
+          "day_of_week": "saturday",
+          "learning_units": ["tu17", "pu26"],
+          "total_minutes": 120
+        },
+        {
+          "day_of_week": "sunday",
+          "learning_units": ["au5"],
+          "total_minutes": 60
+        }
+      ],
+      "checkpoint": {
+        "week_number": 5,
+        "title": "Checkpoint 3: Формальный вывод и доказательства",
+        "assessment_tasks": [
+          "Построить формальное доказательство теоремы методом резолюций",
+          "Применить правила вывода для доказательства импликаций",
+          "Проверить корректность предложенного вывода"
+        ]
+      }
+    },
+    {
+      "week_number": 6,
+      "level": "integrative",
+      "theme": "Интеграция и применение всех навыков",
+      "weekly_goals": [
+        "Решать комплексные задачи, объединяющие все изученные темы",
+        "Применять логику в практических контекстах (программирование, БД)",
+        "Подготовиться к итоговому экзамену"
+      ],
+      "days": [
+        {
+          "day_of_week": "monday",
+          "learning_units": ["tu18"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "tuesday",
+          "learning_units": ["pu27", "pu28"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "wednesday",
+          "learning_units": ["pu29"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "thursday",
+          "learning_units": ["pu30", "pu31"],
+          "total_minutes": 40
+        },
+        {
+          "day_of_week": "friday",
+          "learning_units": ["pu32"],
+          "total_minutes": 30
+        },
+        {
+          "day_of_week": "saturday",
+          "learning_units": ["tu19", "pu33"],
+          "total_minutes": 120
+        },
+        {
+          "day_of_week": "sunday",
+          "learning_units": ["au6"],
+          "total_minutes": 60
+        }
+      ],
+      "checkpoint": {
+        "week_number": 6,
+        "title": "Final Checkpoint: Комплексная интеграция",
+        "assessment_tasks": [
+          "Решить экзаменационные задачи прошлых лет",
+          "Выполнить комплексный проект с применением всех навыков",
+          "Объяснить применение логики в реальных задачах (SQL, алгоритмы)"
         ]
       }
     }
   ],
-  "total_weeks": 2,
+  "total_weeks": 6,
   "checkpoints": [
     {
       "week_number": 2,
-      "title": "Промежуточная проверка",
+      "title": "Checkpoint 1: Фундаментальные операции и кванторы",
       "assessment_tasks": [
-        "Проверка понимания базовых концепций",
-        "Оценка способности применять навыки"
+        "Построить таблицы истинности для формул с 3-4 переменными",
+        "Применить правила отрицания кванторов к предикатным формулам",
+        "Объяснить разницу между ∀ и ∃ на примерах"
+      ]
+    },
+    {
+      "week_number": 3,
+      "title": "Checkpoint 2: Эквивалентность и преобразования",
+      "assessment_tasks": [
+        "Доказать эквивалентность формул через таблицы истинности",
+        "Упростить сложные формулы с помощью законов логики",
+        "Преобразовать формулы к нормальным формам (КНФ/ДНФ)"
+      ]
+    },
+    {
+      "week_number": 5,
+      "title": "Checkpoint 3: Формальный вывод и доказательства",
+      "assessment_tasks": [
+        "Построить формальное доказательство теоремы методом резолюций",
+        "Применить правила вывода для доказательства импликаций",
+        "Проверить корректность предложенного вывода"
+      ]
+    },
+    {
+      "week_number": 6,
+      "title": "Final Checkpoint: Комплексная интеграция",
+      "assessment_tasks": [
+        "Решить экзаменационные задачи прошлых лет",
+        "Выполнить комплексный проект с применением всех навыков",
+        "Объяснить применение логики в реальных задачах (SQL, алгоритмы)"
       ]
     }
   ],
   "final_assessment": {
-    "type": "project",
-    "description": "Итоговый проект по теме",
+    "type": "comprehensive_exam",
+    "description": "Итоговый экзамен по дискретной математике (раздел: математическая логика)",
+    "format": "written_exam",
+    "duration_minutes": 90,
     "criteria": [
-      "Полнота решения",
-      "Качество кода",
-      "Демонстрация понимания"
+      "Точность построения таблиц истинности и логических формул",
+      "Корректность применения правил отрицания кванторов",
+      "Способность упрощать формулы и доказывать эквивалентность",
+      "Понимание применения логики в практических задачах"
     ]
   },
   "support_plan": {
     "scaffolding_techniques": [
-      "Постепенное увеличение сложности",
-      "Наводящие вопросы",
-      "Примеры и шаблоны"
+      "Постепенное увеличение сложности формул (от 2 переменных к 4-5)",
+      "Наводящие вопросы при разборе ошибок в таблицах истинности",
+      "Шаблоны для пошагового построения отрицаний с кванторами",
+      "Визуализация логических операций через диаграммы Эйлера-Венна"
     ],
     "feedback_points": [
-      "После каждого практического задания",
-      "В конце недели"
+      "После каждого практического задания (автоматическая проверка + объяснение)",
+      "В конце каждой недели (review прогресса по целям)",
+      "После каждого checkpoint (детальный разбор ошибок)"
     ],
     "resources": [
-      "Дополнительные материалы",
-      "Видеоуроки",
-      "Сообщество для вопросов"
+      "Конспект с таблицей всех логических операций и примерами",
+      "Видеоуроки по построению таблиц истинности (15-20 мин)",
+      "Интерактивный тренажер для кванторов и отрицаний",
+      "Чат с преподавателем для вопросов"
     ]
   },
   "progress_milestones": [
     {
       "week": 1,
-      "title": "Освоение базовых концепций",
+      "title": "Освоение базовых операций",
       "criteria": [
-        "Понимание терминологии",
-        "Выполнение первых заданий"
+        "Построение таблиц истинности для формул с 2-3 переменными",
+        "Понимание приоритета логических операций"
       ]
     },
     {
       "week": 2,
-      "title": "Применение знаний",
+      "title": "Понимание кванторов",
       "criteria": [
-        "Самостоятельное решение задач",
-        "Прохождение checkpoint"
+        "Корректная интерпретация кванторов ∀ и ∃",
+        "Применение правил отрицания кванторов"
+      ]
+    },
+    {
+      "week": 3,
+      "title": "Применение логических законов",
+      "criteria": [
+        "Упрощение формул с помощью законов логики",
+        "Доказательство эквивалентности через таблицы истинности"
+      ]
+    },
+    {
+      "week": 4,
+      "title": "Работа с предикатами",
+      "criteria": [
+        "Построение отрицаний для вложенных кванторов",
+        "Работа с предикатами от нескольких переменных"
+      ]
+    },
+    {
+      "week": 5,
+      "title": "Формальные доказательства",
+      "criteria": [
+        "Применение метода резолюций",
+        "Построение формальных выводов"
+      ]
+    },
+    {
+      "week": 6,
+      "title": "Интеграция всех навыков",
+      "criteria": [
+        "Решение комплексных задач",
+        "Применение логики в практических контекстах"
       ]
     }
   ]

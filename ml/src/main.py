@@ -27,10 +27,11 @@ app = FastAPI(
 
 
 # Register routers
-from ml.src.api import pipeline, health
+from ml.src.api import pipeline, health, steps
 
 app.include_router(pipeline.router)
 app.include_router(health.router)
+app.include_router(steps.router)
 
 # TODO: Register CDV router when implemented
 # from ml.src.api import cdv

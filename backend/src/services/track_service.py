@@ -100,6 +100,7 @@ async def generate_track(
 
     return GenerationStartedResponse(
         track_id=track.id,
+        status=track.status,
         progress_url=f"/api/tracks/{track.id}/progress",
     )
 

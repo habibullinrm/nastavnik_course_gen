@@ -1,0 +1,144 @@
+{
+  "_comment": "Примеры inputs для тестирования шагов B1-B8 через API /steps/*",
+  "_usage": "Используйте эти примеры в POST запросах к /steps/b1, /steps/b2, и т.д.",
+
+  "b1": {
+    "_description": "B1: Profile Validation - принимает исходный профиль студента",
+    "profile": {
+      "topic": "Элементы математической логики",
+      "subject_area": "Математика",
+      "topic_scope": "Таблицы истинности, логические операции (И, ИЛИ, НЕ, импликация, эквивалентность), кванторы (∀, ∃), отрицание утверждений с кванторами",
+      "role": "Студент технического вуза, 2 курс",
+      "experience_level": "beginner",
+      "formal_education": "Была вводная лекция по дискретной математике, но многого не понял",
+      "identified_risks": [
+        "Чувствую, что отстаю от программы",
+        "Не хватает базовых знаний"
+      ],
+      "motivation_external": "Сдать экзамен по дискретной математике на 4-5",
+      "motivation_internal": "Хочу разобраться в основах для будущих предметов",
+      "goal_type": "mixed",
+      "has_deadline": true,
+      "deadline_date": "2026-06-15",
+      "desired_outcomes": [
+        "Решать задачи на таблицы истинности",
+        "Строить отрицания с кванторами"
+      ],
+      "target_context": "Академический: подготовка к экзамену",
+      "weekly_hours": 5,
+      "novice_mode": true
+    }
+  },
+
+  "b2": {
+    "_description": "B2: Competency Formulation - принимает validated_profile из B1",
+    "_note": "Используйте полный вывод B1 как validated_profile. Для теста можно загрузить из ml/tests/fixtures/mock_responses/B1_validate.json",
+    "validated_profile": {
+      "_file_reference": "См. ml/tests/fixtures/mock_responses/B1_validate.json для полного примера"
+    }
+  },
+
+  "b3": {
+    "_description": "B3: KSA Matrix - принимает original profile + competencies из B2",
+    "_note": "Для полного теста используйте original_profile из B1 и вывод B2",
+    "profile": {
+      "_file_reference": "См. B1 original_profile"
+    },
+    "competencies": {
+      "_file_reference": "См. ml/tests/fixtures/mock_responses/B2_competencies.json"
+    }
+  },
+
+  "b4": {
+    "_description": "B4: Learning Units - принимает ksa_matrix из B3",
+    "ksa_matrix": {
+      "_file_reference": "См. ml/tests/fixtures/mock_responses/B3_ksa_matrix.json"
+    }
+  },
+
+  "b5": {
+    "_description": "B5: Hierarchy - принимает learning_units из B4 + time budget + weeks",
+    "learning_units": {
+      "_file_reference": "См. ml/tests/fixtures/mock_responses/B4_learning_units.json"
+    },
+    "time_budget_minutes": 1800,
+    "estimated_weeks": 6
+  },
+
+  "b6": {
+    "_description": "B6: Problem Formulations - принимает clusters + units из B4",
+    "_note": "Извлеките clusters и units из B4_learning_units.json",
+    "clusters": [
+      {
+        "_note": "Пример cluster из B4 output",
+        "cluster_id": "C1",
+        "theory_unit_ids": ["TU1", "TU2"],
+        "practice_unit_ids": ["PU1"]
+      }
+    ],
+    "units": {
+      "_file_reference": "См. theory_units + practice_units из B4_learning_units.json"
+    }
+  },
+
+  "b7": {
+    "_description": "B7: Schedule Assembly - принимает hierarchy из B5 + blueprints из B6 + profile + weeks",
+    "hierarchy": {
+      "_file_reference": "См. ml/tests/fixtures/mock_responses/B5_hierarchy.json"
+    },
+    "blueprints": {
+      "_file_reference": "См. ml/tests/fixtures/mock_responses/B6_problem_formulations.json"
+    },
+    "profile": {
+      "_file_reference": "См. original_profile из B1"
+    },
+    "total_weeks": 6
+  },
+
+  "b8": {
+    "_description": "B8: Track Validation - принимает complete_track со всеми выводами B1-B7",
+    "complete_track": {
+      "validated_profile": {
+        "_file_reference": "B1 output"
+      },
+      "competencies": {
+        "_file_reference": "B2 output"
+      },
+      "ksa_matrix": {
+        "_file_reference": "B3 output"
+      },
+      "learning_units": {
+        "_file_reference": "B4 output"
+      },
+      "hierarchy": {
+        "_file_reference": "B5 output"
+      },
+      "blueprints": {
+        "_file_reference": "B6 output"
+      },
+      "schedule": {
+        "_file_reference": "B7 output"
+      }
+    },
+    "profile": {
+      "_file_reference": "См. original_profile из B1"
+    },
+    "max_retries": 3
+  },
+
+  "_instructions": {
+    "usage_example": {
+      "_comment": "Пример запроса к POST /steps/b1",
+      "request": {
+        "use_mock": true,
+        "inputs": {
+          "profile": "<<скопируйте profile из b1 выше>>"
+        }
+      }
+    },
+    "loading_from_files": {
+      "_comment": "Для шагов B2-B8, загрузите соответствующие JSON файлы из ml/tests/fixtures/mock_responses/ и используйте их как inputs",
+      "example": "validated_profile = json.load('ml/tests/fixtures/mock_responses/B1_validate.json')"
+    }
+  }
+}

@@ -277,7 +277,7 @@ async def run_pipeline(
 
         try:
             b6_result, b6_meta = await b6_problem_formulations.run_b6_problem_formulations(
-                b4_result.clusters,
+                intermediate_results["learning_units"]["clusters"],
                 intermediate_results["learning_units"],
                 deepseek_client,
             )

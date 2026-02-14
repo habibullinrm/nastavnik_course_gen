@@ -2,56 +2,140 @@
   "overall_valid": true,
   "checks": [
     {
-      "name": "competency_coverage",
-      "status": "pass",
+      "check_name": "competency_coverage",
+      "passed": true,
       "severity": "critical",
-      "details": "Все компетенции покрыты учебными единицами"
+      "message": "Все компетенции покрыты учебными единицами. Найдено соответствие для всех 8 компетенций в theory и practice units."
     },
     {
-      "name": "ksa_coverage",
-      "status": "pass",
+      "check_name": "ksa_coverage",
+      "passed": true,
       "severity": "critical",
-      "details": "Все ЗУН покрыты в расписании"
+      "message": "Все элементы KSA matrix (knowledge, skills, habits) покрыты в расписании. 100% покрытие достигнуто."
     },
     {
-      "name": "dependency_order",
-      "status": "pass",
+      "check_name": "dependency_order",
+      "passed": true,
       "severity": "critical",
-      "details": "Порядок изучения соответствует зависимостям"
+      "message": "Порядок изучения соответствует зависимостям между учебными единицами. Топологическая сортировка выполнена корректно."
     },
     {
-      "name": "time_allocation",
-      "status": "pass",
-      "severity": "important",
-      "details": "Время распределено в рамках доступного бюджета"
+      "check_name": "time_allocation",
+      "passed": true,
+      "severity": "warning",
+      "message": "Время распределено в рамках доступного бюджета. Использовано 1800 из 1800 минут (100%)."
     },
     {
-      "name": "profile_alignment",
-      "status": "pass",
+      "check_name": "profile_alignment",
+      "passed": true,
       "severity": "critical",
-      "details": "Трек соответствует профилю учащегося"
+      "message": "Трек соответствует профилю учащегося: уровень 'beginner', цель - подготовка к экзамену, формат 'mentored'."
     },
     {
-      "name": "learning_progression",
-      "status": "pass",
-      "severity": "important",
-      "details": "Прогрессия от простого к сложному соблюдена"
+      "check_name": "learning_progression",
+      "passed": true,
+      "severity": "warning",
+      "message": "Прогрессия от простого к сложному соблюдена. Levels: foundational (2 weeks) → intermediate (2 weeks) → advanced (1 week) → integrative (1 week)."
     },
     {
-      "name": "checkpoint_placement",
-      "status": "pass",
-      "severity": "important",
-      "details": "Контрольные точки размещены корректно"
+      "check_name": "checkpoint_placement",
+      "passed": true,
+      "severity": "warning",
+      "message": "Контрольные точки размещены корректно: weeks 2, 3, 5, 6. Соответствуют завершению ключевых тем."
     },
     {
-      "name": "fsm_readiness",
-      "status": "warning",
-      "severity": "optional",
-      "details": "FSM-правила присутствуют для большинства единиц"
+      "check_name": "theory_practice_balance",
+      "passed": true,
+      "severity": "warning",
+      "message": "Баланс теории и практики: 45% theory units, 50% practice units, 5% automation units."
+    },
+    {
+      "check_name": "daily_load_distribution",
+      "passed": true,
+      "severity": "info",
+      "message": "Ежедневная нагрузка распределена равномерно: Mon-Thu 40 мин, Fri 30 мин, Sat 120 мин, Sun 60 мин."
+    },
+    {
+      "check_name": "support_plan_completeness",
+      "passed": true,
+      "severity": "info",
+      "message": "План поддержки включает scaffolding techniques (4), feedback points (3), resources (4)."
+    },
+    {
+      "check_name": "milestone_coverage",
+      "passed": true,
+      "severity": "info",
+      "message": "Milestones определены для каждой недели (6 total), соответствуют weekly themes."
+    },
+    {
+      "check_name": "final_assessment_alignment",
+      "passed": true,
+      "severity": "warning",
+      "message": "Итоговая аттестация (comprehensive_exam, 90 min) соответствует целям обучения и уровню сложности."
+    },
+    {
+      "check_name": "beginner_friendly_scaffolding",
+      "passed": true,
+      "severity": "info",
+      "message": "Для уровня 'beginner' предусмотрены: шаблоны, наводящие вопросы, визуализация, постепенное усложнение."
+    },
+    {
+      "check_name": "barrier_addressing",
+      "passed": true,
+      "severity": "critical",
+      "message": "Все 4 ключевых барьера из profile адресованы в theory units: импликация (tu1), операции И/ИЛИ (tu1), кванторы (tu5-tu8), отрицание кванторов (tu6-tu7)."
+    },
+    {
+      "check_name": "confusing_concepts_coverage",
+      "passed": true,
+      "severity": "warning",
+      "message": "Все 4 confusing concepts покрыты отдельными разделами: импликация, кванторы, эквивалентность, отрицание кванторов."
+    },
+    {
+      "check_name": "deadline_feasibility",
+      "passed": true,
+      "severity": "critical",
+      "message": "Трек укладывается в дедлайн 2026-06-15 (6 недель * 7 дней = 42 дня, что даёт запас ~4 месяца)."
+    },
+    {
+      "check_name": "desired_outcomes_mapping",
+      "passed": true,
+      "severity": "critical",
+      "message": "Все 4 desired outcomes покрыты: таблицы истинности (pu1-pu6), отрицания с кванторами (pu7-pu11), доказательства законов (pu12-pu16), экзаменационные задания (final assessment)."
+    },
+    {
+      "check_name": "weekly_time_budget_adherence",
+      "passed": true,
+      "severity": "critical",
+      "message": "Недельный бюджет времени соблюдён: 300 минут/неделю соответствует профилю (weekly_hours: 5)."
+    },
+    {
+      "check_name": "practice_format_alignment",
+      "passed": true,
+      "severity": "info",
+      "message": "Форматы практики соответствуют предпочтениям: compare_with_standard, step_by_step (указано в practice units)."
+    },
+    {
+      "check_name": "theory_format_preference",
+      "passed": true,
+      "severity": "info",
+      "message": "Формат теории 'examples_first' соблюдён: все theory units начинаются с конкретных примеров перед общими правилами."
+    },
+    {
+      "check_name": "checkpoint_alignment_with_tasks",
+      "passed": true,
+      "severity": "warning",
+      "message": "Checkpoint tasks соответствуют target_tasks из profile: таблицы истинности (checkpoint 1), отрицания кванторов (checkpoint 1), законы логики (checkpoint 2)."
+    },
+    {
+      "check_name": "fsm_rules_presence",
+      "passed": false,
+      "severity": "info",
+      "message": "FSM-правила для Phase C не включены в mock fixture (out of scope для B7 step, но могут быть добавлены позже)."
     }
   ],
   "critical_failures": 0,
-  "warnings": 1,
+  "warnings": 8,
   "retry_count": 0,
   "final_status": "validated_with_warnings"
 }

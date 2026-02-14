@@ -1,0 +1,67 @@
+{
+  "topic": "Основы Python для начинающих",
+  "subject_area": "Программирование",
+  "topic_scope": "Переменные, условия, циклы, функции",
+  "role": "Начинающий разработчик",
+  "experience_level": "beginner",
+  "formal_education": "Прошел вводный курс по информатике",
+  "identified_risks": [
+    "Нет опыта программирования",
+    "Сложно с английским синтаксисом"
+  ],
+  "motivation_external": "Получить работу junior разработчика",
+  "motivation_internal": "Научиться создавать свои программы",
+  "goal_type": "mixed",
+  "has_deadline": true,
+  "deadline_date": "2026-08-01",
+  "desired_outcomes": [
+    "Писать простые программы на Python",
+    "Понимать основы ООП",
+    "Решать задачи на LeetCode easy"
+  ],
+  "target_context": "Самообучение",
+  "target_tasks": [
+    {
+      "id": "t1",
+      "description": "Написать программу с условиями и циклами",
+      "complexity_rank": 1
+    },
+    {
+      "id": "t2",
+      "description": "Создать класс с методами",
+      "complexity_rank": 2
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "st1",
+      "description": "Понять синтаксис функций",
+      "parent_task_id": "t2",
+      "required_knowledge": [
+        "функции",
+        "параметры"
+      ],
+      "required_skills": [
+        "написание кода"
+      ]
+    }
+  ],
+  "confusing_concepts": [
+    {
+      "id": "c1",
+      "term": "self в методах класса",
+      "confusion_description": "Зачем нужен self?"
+    }
+  ],
+  "diagnostic_result": "gaps",
+  "weekly_hours": 8,
+  "success_criteria": [
+    {
+      "id": "sc1",
+      "description": "Решить 20 задач на LeetCode",
+      "measurable": true,
+      "metric": "tasks_solved >= 20"
+    }
+  ],
+  "novice_mode": true
+}

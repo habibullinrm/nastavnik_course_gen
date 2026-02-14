@@ -47,6 +47,206 @@
 - Пакетная генерация: до 100 версий трека из одного профиля
 - 4 Docker сервиса: frontend, backend, ml, db
 
+## API Endpoints for Step Testing
+
+**Назначение**: Эндпоинты для изолированного тестирования отдельных шагов B1-B8 без запуска полного пайплайна. Позволяют быстро отлаживать промпты и проверять изменения в логике отдельных шагов.
+
+**Базовый URL**: `http://localhost:8002/steps/`
+
+**Доступные эндпоинты**:
+- `POST /steps/b1` — B1: Profile Validation and Enrichment
+- `POST /steps/b2` — B2: Competency Formulation
+- `POST /steps/b3` — B3: KSA Matrix (Knowledge-Skills-Habits)
+- `POST /steps/b4` — B4: Learning Units Design
+- `POST /steps/b5` — B5: Hierarchy and Levels
+- `POST /steps/b6` — B6: Problem Formulations (Lesson Blueprints)
+- `POST /steps/b7` — B7: Schedule Assembly
+- `POST /steps/b8` — B8: Track Validation
+
+**Request format** (общий для всех эндпоинтов):
+```json
+{
+  "use_mock": true,  // true = MockLLMClient, false = DeepSeekClient
+  "inputs": {
+    // Структура зависит от шага (см. примеры ниже)
+  }
+}
+```
+
+**Response format** (общий для всех эндпоинтов):
+```json
+{
+  "step_name": "B1",
+  "success": true,
+  "output": {
+    // OutputSchema шага в виде dict
+  },
+  "metadata": {
+    "tokens_used": 1193,
+    "duration_ms": 0.24,
+    "model": "mock-llm"
+  },
+  "error": null  // Описание ошибки при success=false
+}
+```
+
+**Input structures по шагам**:
+
+**B1** (Profile Validation):
+```json
+{
+  "inputs": {
+    "profile": {
+      "topic": "...",
+      "subject_area": "...",
+      "experience_level": "beginner",
+      // ... полный ProfileRequest
+    }
+  }
+}
+```
+
+**B2** (Competency Formulation):
+```json
+{
+  "inputs": {
+    "validated_profile": {
+      // ... полный вывод B1 (ValidatedStudentProfile)
+    }
+  }
+}
+```
+
+**B3** (KSA Matrix):
+```json
+{
+  "inputs": {
+    "profile": {...},        // original profile
+    "competencies": {...}    // вывод B2
+  }
+}
+```
+
+**B4** (Learning Units):
+```json
+{
+  "inputs": {
+    "ksa_matrix": {...}  // вывод B3
+  }
+}
+```
+
+**B5** (Hierarchy):
+```json
+{
+  "inputs": {
+    "learning_units": {...},       // вывод B4
+    "time_budget_minutes": 1800,
+    "estimated_weeks": 6
+  }
+}
+```
+
+**B6** (Problem Formulations):
+```json
+{
+  "inputs": {
+    "clusters": [...],  // из B4.clusters
+    "units": {...}      // из B4 (theory + practice units)
+  }
+}
+```
+
+**B7** (Schedule Assembly):
+```json
+{
+  "inputs": {
+    "hierarchy": {...},     // вывод B5
+    "blueprints": {...},    // вывод B6
+    "profile": {...},       // original profile
+    "total_weeks": 6
+  }
+}
+```
+
+**B8** (Track Validation):
+```json
+{
+  "inputs": {
+    "complete_track": {
+      "validated_profile": {...},  // B1
+      "competencies": {...},        // B2
+      "ksa_matrix": {...},          // B3
+      "learning_units": {...},      // B4
+      "hierarchy": {...},           // B5
+      "blueprints": {...},          // B6
+      "schedule": {...}             // B7
+    },
+    "profile": {...},  // original profile
+    "max_retries": 3
+  }
+}
+```
+
+**Примеры использования**:
+
+1. **Тестирование промпта B1 с mock LLM** (~0.2ms):
+```bash
+curl -X POST http://localhost:8002/steps/b1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "use_mock": true,
+    "inputs": {
+      "profile": {
+        "topic": "Python backend",
+        "experience_level": "beginner",
+        "weekly_hours": 5
+      }
+    }
+  }'
+```
+
+2. **Тестирование промпта B2 с реальным DeepSeek** (~40s):
+```bash
+curl -X POST http://localhost:8002/steps/b2 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "use_mock": false,
+    "inputs": {
+      "validated_profile": {...}  // загрузите из B1 output
+    }
+  }'
+```
+
+3. **Цепочка тестов B1→B2→B3**:
+```bash
+# Шаг 1: B1
+b1_out=$(curl -s -X POST http://localhost:8002/steps/b1 \
+  -H "Content-Type: application/json" \
+  -d @profile.json | jq '.output')
+
+# Шаг 2: B2
+b2_out=$(curl -s -X POST http://localhost:8002/steps/b2 \
+  -H "Content-Type: application/json" \
+  -d "{\"use_mock\": true, \"inputs\": {\"validated_profile\": $b1_out}}" \
+  | jq '.output')
+
+# Шаг 3: B3
+curl -X POST http://localhost:8002/steps/b3 \
+  -H "Content-Type: application/json" \
+  -d "{\"use_mock\": true, \"inputs\": {\"profile\": $b1_out.original_profile, \"competencies\": $b2_out}}"
+```
+
+**Mock fixtures**: Для use_mock=true используются предопределенные ответы из `ml/tests/fixtures/mock_responses/B{1-8}_*.json`. Это позволяет тестировать шаги без реальных API вызовов.
+
+**Доступ через Swagger UI**: `http://localhost:8002/docs` — интерактивная документация со всеми эндпоинтами, схемами и возможностью тестирования прямо в браузере.
+
+**Преимущества**:
+- ⚡ Быстрая отладка: тест одного шага занимает ~0.2ms (mock) vs ~326s (полный пайплайн)
+- 🔍 Изоляция: можно тестировать один шаг без перезапуска предыдущих
+- 🧪 Гибкость: mock или real LLM client
+- 📊 Метрики: tokens_used, duration_ms для каждого шага
+
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
