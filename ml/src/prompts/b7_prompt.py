@@ -55,6 +55,18 @@ OUTPUT JSON:
         }}
       ],
       "checkpoint": null
+    }},
+    {{
+      "week_number": 4,
+      "level": "intermediate",
+      "theme": "Week theme with checkpoint",
+      "weekly_goals": ["goal3"],
+      "days": [...],
+      "checkpoint": {{
+        "week_number": 4,
+        "title": "Checkpoint 1",
+        "assessment_tasks": ["task1", "task2"]
+      }}
     }}
   ],
   "total_weeks": {total_weeks},
