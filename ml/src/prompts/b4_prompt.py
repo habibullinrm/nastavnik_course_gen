@@ -3,8 +3,8 @@
 
 def get_b4_prompt(ksa_matrix: dict) -> str:
     """Generate prompt for B4: Design learning units from KSA items."""
-    import json
-    ksa_json = json.dumps(ksa_matrix, ensure_ascii=False, indent=2)
+    from ml.src.prompts.json_utils import to_json
+    ksa_json = to_json(ksa_matrix)
 
     return f"""You are an instructional designer creating learning units based on the 4C/ID model.
 

@@ -3,8 +3,8 @@
 
 def get_b6_prompt(clusters: list, units: dict) -> str:
     """Generate prompt for B6: Create PBL lesson blueprints."""
-    import json
-    clusters_json = json.dumps(clusters, ensure_ascii=False, indent=2)
+    from ml.src.prompts.json_utils import to_json
+    clusters_json = to_json(clusters)
 
     return f"""You are a problem-based learning (PBL) designer creating lesson blueprints.
 

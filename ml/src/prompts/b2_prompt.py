@@ -5,10 +5,10 @@ def get_b2_prompt(validated_profile: dict) -> str:
     """
     Generate prompt for B2: Formulate competencies from tasks and outcomes.
     """
-    import json
+    from ml.src.prompts.json_utils import to_json
     profile = validated_profile["original_profile"]
     effective_level = validated_profile["effective_level"]
-    profile_json = json.dumps(profile, ensure_ascii=False, indent=2)
+    profile_json = to_json(profile)
 
     return f"""You are an educational expert designing competencies for a personalized learning track.
 

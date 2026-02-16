@@ -3,8 +3,8 @@
 
 def get_b3_prompt(profile: dict, competencies: dict) -> str:
     """Generate prompt for B3: Decompose competencies into KSA matrix."""
-    import json
-    competencies_json = json.dumps(competencies, ensure_ascii=False, indent=2)
+    from ml.src.prompts.json_utils import to_json
+    competencies_json = to_json(competencies)
 
     return f"""You are an educational expert decomposing competencies into a Knowledge-Skills-Habits (KSA) matrix.
 

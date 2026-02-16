@@ -3,9 +3,9 @@
 
 def get_b8_prompt(complete_track: dict, profile: dict) -> str:
     """Generate prompt for B8: Validate the complete track."""
-    import json
-    profile_json = json.dumps(profile, ensure_ascii=False, indent=2)
-    track_json = json.dumps(complete_track, ensure_ascii=False, indent=2)
+    from ml.src.prompts.json_utils import to_json
+    profile_json = to_json(profile)
+    track_json = to_json(complete_track)
 
     return f"""You are a quality assurance expert validating a generated learning track.
 

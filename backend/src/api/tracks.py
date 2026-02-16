@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.src.core.database import get_db
 from backend.src.schemas.track import (
     FieldUsageResponse,
+    GenerateTrackRequest,
     GenerationStartedResponse,
     TrackDetail,
     TrackListResponse,
@@ -29,14 +30,14 @@ router = APIRouter(prefix="/api/tracks", tags=["tracks"])
 
 @router.post("/generate", response_model=GenerationStartedResponse, status_code=status.HTTP_202_ACCEPTED)
 async def generate_track(
-    profile_id: uuid.UUID,
+    request: GenerateTrackRequest,
     db: AsyncSession = Depends(get_db),
 ) -> GenerationStartedResponse:
     """
     Запускает генерацию персонализированного трека.
 
     Args:
-        profile_id: UUID профиля студента
+        request: Запрос с UUID профиля студента
         db: Сессия базы данных
 
     Returns:
@@ -46,7 +47,7 @@ async def generate_track(
         HTTPException: 404 если профиль не найден, 500 если ML сервис недоступен
     """
     try:
-        result = await track_service.generate_track(profile_id, db)
+        result = await track_service.generate_track(request.profile_id, db)
         return result
     except ValueError as e:
         raise HTTPException(

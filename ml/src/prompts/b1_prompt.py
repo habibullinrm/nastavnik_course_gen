@@ -7,8 +7,8 @@ def get_b1_prompt(profile: dict) -> str:
 
     Validates CRITICAL fields, calculates effective_level, enriches with system-generated data.
     """
-    import json
-    profile_json = json.dumps(profile, ensure_ascii=False, indent=2)
+    from ml.src.prompts.json_utils import to_json
+    profile_json = to_json(profile)
 
     return f"""You are an educational expert analyzing a student profile for personalized course generation.
 

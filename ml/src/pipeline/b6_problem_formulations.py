@@ -34,7 +34,7 @@ async def run_b6_problem_formulations(
         prompt=prompt,
         response_model=BlueprintsOutput,
         temperature=0.8,  # Higher creativity for problem design
-        max_tokens=4000,
+        max_tokens=6000,
     )
 
     logger.info(f"B6 complete: {len(result.blueprints)} lesson blueprints created")

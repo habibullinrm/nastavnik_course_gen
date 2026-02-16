@@ -5,10 +5,10 @@ def get_b7_prompt(
     hierarchy: dict, blueprints: dict, schedule_info: dict, total_weeks: int
 ) -> str:
     """Generate prompt for B7: Assemble weekly schedule."""
-    import json
-    hierarchy_json = json.dumps(hierarchy, ensure_ascii=False, indent=2)
-    blueprints_json = json.dumps(blueprints, ensure_ascii=False, indent=2)
-    schedule_json = json.dumps(schedule_info, ensure_ascii=False, indent=2)
+    from ml.src.prompts.json_utils import to_json
+    hierarchy_json = to_json(hierarchy)
+    blueprints_json = to_json(blueprints)
+    schedule_json = to_json(schedule_info)
 
     return f"""You are a schedule designer creating a personalized weekly learning schedule.
 

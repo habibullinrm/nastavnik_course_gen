@@ -1,6 +1,5 @@
 """Pipeline orchestrator - coordinates B1-B8 execution."""
 
-import asyncio
 import logging
 import time
 from datetime import datetime
@@ -23,6 +22,38 @@ from ml.src.services.deepseek_client import get_deepseek_client
 from ml.src.services.step_logger import get_step_logger
 
 logger = logging.getLogger(__name__)
+
+STEP_DESCRIPTIONS = {
+    "B1": "Валидация и обогащение профиля",
+    "B2": "Формулировка компетенций",
+    "B3": "KSA-матрица (Знания-Умения-Навыки)",
+    "B4": "Проектирование учебных единиц",
+    "B5": "Иерархия и уровни",
+    "B6": "Формулировки проблем (PBL)",
+    "B7": "Сборка расписания",
+    "B8": "Валидация трека",
+}
+
+
+def _log_start(track_id: UUID, step: str, step_num: int) -> None:
+    desc = STEP_DESCRIPTIONS.get(step, step)
+    msg = f"[{track_id}] ▶ [{step_num}/8] {step}: {desc} — начало"
+    logger.info(msg)
+    print(msg, flush=True)
+
+
+def _log_done(track_id: UUID, step: str, step_num: int, duration: float, tokens: int) -> None:
+    desc = STEP_DESCRIPTIONS.get(step, step)
+    msg = f"[{track_id}] ✓ [{step_num}/8] {step}: {desc} — {duration:.1f}s, {tokens} tokens"
+    logger.info(msg)
+    print(msg, flush=True)
+
+
+def _log_fail(track_id: UUID, step: str, step_num: int, error: Exception) -> None:
+    desc = STEP_DESCRIPTIONS.get(step, step)
+    msg = f"[{track_id}] ✗ [{step_num}/8] {step}: {desc} — ОШИБКА: {error}"
+    logger.error(msg)
+    print(msg, flush=True)
 
 
 class PipelineError(Exception):
@@ -66,11 +97,17 @@ async def run_pipeline(
     # Storage for intermediate results
     intermediate_results = {}
 
+    topic = profile.get("topic", "unknown")
+    print(f"\n{'='*70}", flush=True)
+    print(f"[{track_id}] Pipeline B1-B8: генерация трека", flush=True)
+    print(f"[{track_id}] Тема: {topic}", flush=True)
+    print(f"{'='*70}", flush=True)
+
     try:
         # =====================================================================
         # B1: Validate and Enrich Profile
         # =====================================================================
-        logger.info(f"[{track_id}] Starting B1: Validation")
+        _log_start(track_id, "B1", 1)
         step_start = time.time()
         llm_calls_b1 = []
 
@@ -85,7 +122,6 @@ async def run_pipeline(
             llm_calls_b1.append(b1_meta)
             intermediate_results["validated_profile"] = b1_result.model_dump()
 
-            # Log step
             await step_logger.log_step(
                 track_id=track_id,
                 step_name="B1_validate",
@@ -102,15 +138,16 @@ async def run_pipeline(
                     success=True,
                 )
             )
+            _log_done(track_id, "B1", 1, b1_duration, b1_tokens)
 
         except Exception as e:
-            logger.error(f"B1 failed: {e}")
+            _log_fail(track_id, "B1", 1, e)
             raise PipelineError("B1_validate", str(e))
 
         # =====================================================================
         # B2: Formulate Competencies
         # =====================================================================
-        logger.info(f"[{track_id}] Starting B2: Competencies")
+        _log_start(track_id, "B2", 2)
         step_start = time.time()
         llm_calls_b2 = []
 
@@ -141,15 +178,16 @@ async def run_pipeline(
                     success=True,
                 )
             )
+            _log_done(track_id, "B2", 2, b2_duration, b2_tokens)
 
         except Exception as e:
-            logger.error(f"B2 failed: {e}")
+            _log_fail(track_id, "B2", 2, e)
             raise PipelineError("B2_competencies", str(e))
 
         # =====================================================================
         # B3: KSA Matrix
         # =====================================================================
-        logger.info(f"[{track_id}] Starting B3: KSA Matrix")
+        _log_start(track_id, "B3", 3)
         step_start = time.time()
         llm_calls_b3 = []
 
@@ -182,15 +220,16 @@ async def run_pipeline(
                     success=True,
                 )
             )
+            _log_done(track_id, "B3", 3, b3_duration, b3_tokens)
 
         except Exception as e:
-            logger.error(f"B3 failed: {e}")
+            _log_fail(track_id, "B3", 3, e)
             raise PipelineError("B3_ksa_matrix", str(e))
 
         # =====================================================================
         # B4: Learning Units
         # =====================================================================
-        logger.info(f"[{track_id}] Starting B4: Learning Units")
+        _log_start(track_id, "B4", 4)
         step_start = time.time()
         llm_calls_b4 = []
 
@@ -221,15 +260,16 @@ async def run_pipeline(
                     success=True,
                 )
             )
+            _log_done(track_id, "B4", 4, b4_duration, b4_tokens)
 
         except Exception as e:
-            logger.error(f"B4 failed: {e}")
+            _log_fail(track_id, "B4", 4, e)
             raise PipelineError("B4_learning_units", str(e))
 
         # =====================================================================
         # B5: Hierarchy
         # =====================================================================
-        logger.info(f"[{track_id}] Starting B5: Hierarchy")
+        _log_start(track_id, "B5", 5)
         step_start = time.time()
         llm_calls_b5 = []
 
@@ -263,15 +303,16 @@ async def run_pipeline(
                     success=True,
                 )
             )
+            _log_done(track_id, "B5", 5, b5_duration, b5_tokens)
 
         except Exception as e:
-            logger.error(f"B5 failed: {e}")
+            _log_fail(track_id, "B5", 5, e)
             raise PipelineError("B5_hierarchy", str(e))
 
         # =====================================================================
         # B6: Problem Formulations
         # =====================================================================
-        logger.info(f"[{track_id}] Starting B6: Problem Formulations")
+        _log_start(track_id, "B6", 6)
         step_start = time.time()
         llm_calls_b6 = []
 
@@ -304,15 +345,16 @@ async def run_pipeline(
                     success=True,
                 )
             )
+            _log_done(track_id, "B6", 6, b6_duration, b6_tokens)
 
         except Exception as e:
-            logger.error(f"B6 failed: {e}")
+            _log_fail(track_id, "B6", 6, e)
             raise PipelineError("B6_problem_formulations", str(e))
 
         # =====================================================================
         # B7: Schedule
         # =====================================================================
-        logger.info(f"[{track_id}] Starting B7: Schedule Assembly")
+        _log_start(track_id, "B7", 7)
         step_start = time.time()
         llm_calls_b7 = []
 
@@ -347,20 +389,20 @@ async def run_pipeline(
                     success=True,
                 )
             )
+            _log_done(track_id, "B7", 7, b7_duration, b7_tokens)
 
         except Exception as e:
-            logger.error(f"B7 failed: {e}")
+            _log_fail(track_id, "B7", 7, e)
             raise PipelineError("B7_schedule", str(e))
 
         # =====================================================================
         # B8: Validation
         # =====================================================================
-        logger.info(f"[{track_id}] Starting B8: Validation")
+        _log_start(track_id, "B8", 8)
         step_start = time.time()
         llm_calls_b8 = []
 
         try:
-            # Construct complete track for validation
             complete_track_data = {
                 "validated_profile": intermediate_results["validated_profile"],
                 "competency_set": intermediate_results["competency_set"],
@@ -397,9 +439,10 @@ async def run_pipeline(
                     success=True,
                 )
             )
+            _log_done(track_id, "B8", 8, b8_duration, b8_tokens)
 
         except Exception as e:
-            logger.error(f"B8 failed: {e}")
+            _log_fail(track_id, "B8", 8, e)
             raise PipelineError("B8_validation", str(e))
 
         # =====================================================================
@@ -418,7 +461,6 @@ async def run_pipeline(
             total_duration_sec=total_duration,
         )
 
-        # Construct PersonalizedTrack
         track_data = {
             "validated_profile": intermediate_results["validated_profile"],
             "competency_set": intermediate_results["competency_set"],
@@ -430,10 +472,13 @@ async def run_pipeline(
             "validation": intermediate_results["validation"],
         }
 
-        logger.info(
-            f"[{track_id}] Pipeline complete in {total_duration:.1f}s, "
-            f"{total_tokens} tokens"
+        print(f"\n{'='*70}", flush=True)
+        print(
+            f"[{track_id}] Pipeline ЗАВЕРШЁН: {total_duration:.1f}s, "
+            f"{total_tokens} tokens, 8/8 шагов",
+            flush=True,
         )
+        print(f"{'='*70}\n", flush=True)
 
         return {
             "track_data": track_data,
@@ -443,6 +488,12 @@ async def run_pipeline(
         }
 
     except PipelineError:
+        total_duration = time.time() - start_time
+        print(
+            f"\n[{track_id}] Pipeline ПРЕРВАН после {total_duration:.1f}s, "
+            f"{total_tokens} tokens, {len(steps_log)}/8 шагов завершено",
+            flush=True,
+        )
         raise
     except Exception as e:
         logger.error(f"Unexpected pipeline error: {e}")

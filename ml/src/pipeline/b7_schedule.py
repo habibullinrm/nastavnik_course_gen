@@ -45,7 +45,7 @@ async def run_b7_schedule(
         prompt=prompt,
         response_model=ScheduleOutput,
         temperature=0.6,
-        max_tokens=4000,
+        max_tokens=8000,
     )
 
     logger.info(

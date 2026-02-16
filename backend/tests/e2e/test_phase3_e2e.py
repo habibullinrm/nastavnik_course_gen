@@ -67,7 +67,7 @@ async def test_full_generation_cycle():
         # 2. Запустить генерацию
         response = await client.post(
             f"{BASE_URL}/api/tracks/generate",
-            params={'profile_id': profile_id}
+            json={'profile_id': profile_id}
         )
         assert response.status_code == 202, f"Generation start failed: {response.text}"
         

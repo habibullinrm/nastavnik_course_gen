@@ -44,9 +44,9 @@ class GenerationLog(Base):
     )
 
     step_name: Mapped[str] = mapped_column(
-        String(10),
+        String(50),
         nullable=False,
-        comment="Название шага: B1, B2, ..., B8",
+        comment="Название шага: B1_validate, B2_competencies, ..., B8_validation",
     )
 
     step_output: Mapped[dict] = mapped_column(

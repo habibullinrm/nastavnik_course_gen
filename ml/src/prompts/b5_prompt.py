@@ -3,8 +3,8 @@
 
 def get_b5_prompt(learning_units: dict, time_budget_minutes: int, estimated_weeks: int) -> str:
     """Generate prompt for B5: Organize units into levels and sequence."""
-    import json
-    units_json = json.dumps(learning_units, ensure_ascii=False, indent=2)
+    from ml.src.prompts.json_utils import to_json
+    units_json = to_json(learning_units)
     weekly_budget = time_budget_minutes // estimated_weeks if estimated_weeks > 0 else 0
 
     return f"""You are a curriculum architect organizing learning units into a progressive hierarchy.

@@ -7,6 +7,11 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
+class GenerateTrackRequest(BaseModel):
+    """Request to start track generation."""
+    profile_id: UUID
+
+
 class GenerationStartedResponse(BaseModel):
     """Response when track generation starts."""
     track_id: UUID
