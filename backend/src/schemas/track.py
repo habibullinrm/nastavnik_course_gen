@@ -12,9 +12,23 @@ class GenerateTrackRequest(BaseModel):
     profile_id: UUID
 
 
+class GenerateBatchRequest(BaseModel):
+    """Request to start batch track generation."""
+    profile_id: UUID
+    batch_size: int = Field(ge=2, le=5)
+
+
 class GenerationStartedResponse(BaseModel):
-    """Response when track generation starts."""
+    """Response when track generation starts (202)."""
     track_id: UUID
+    status: str
+    progress_url: str
+
+
+class BatchGenerationStartedResponse(BaseModel):
+    """Response when batch generation starts (202)."""
+    batch_id: UUID
+    track_ids: list[UUID]
     status: str
     progress_url: str
 
@@ -42,6 +56,7 @@ class TrackDetail(BaseModel):
     status: str
     error_message: str | None = None
     generation_duration_sec: float | None = None
+    batch_id: UUID | None = None
     batch_index: int | None = None
     created_at: datetime
     updated_at: datetime

@@ -11,6 +11,7 @@ import type {
   QAReport,
   QAReportSummary,
   FieldUsageResponse,
+  BatchGenerationStartedResponse,
 } from '@/types'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -99,6 +100,23 @@ export async function listTracks(profileId?: string): Promise<TrackSummary[]> {
 
 export async function getFieldUsage(trackId: string): Promise<FieldUsageResponse> {
   return fetchAPI<FieldUsageResponse>(`/api/tracks/${trackId}/field-usage`)
+}
+
+export async function cancelTrack(trackId: string): Promise<{ status: string; track_id: string }> {
+  return fetchAPI(`/api/tracks/${trackId}/cancel`, {
+    method: 'POST',
+  })
+}
+
+export async function generateTrackBatch(
+  profileId: string,
+  batchSize: number
+): Promise<BatchGenerationStartedResponse> {
+  return fetchAPI('/api/tracks/generate-batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profile_id: profileId, batch_size: batchSize }),
+  })
 }
 
 // QA endpoints

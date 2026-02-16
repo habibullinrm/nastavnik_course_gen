@@ -39,6 +39,18 @@ class PipelineRunResponse(BaseModel):
     validation_b8: dict[str, Any] | None
 
 
+class PipelineBatchRequest(BaseModel):
+    """Request to run batch pipeline for N tracks."""
+    profile: dict[str, Any]
+    track_ids: list[str]
+    algorithm_version: str = "v1.0.0"
+
+
+class PipelineBatchResponse(BaseModel):
+    """Response from batch pipeline run."""
+    results: list[dict[str, Any]]
+
+
 class PipelineError(BaseModel):
     """Error response from pipeline."""
     error: str

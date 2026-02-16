@@ -3,17 +3,23 @@
 
 Предоставляет endpoints:
 - POST /pipeline/run - синхронный запуск pipeline
-- POST /pipeline/run-stream - потоковый запуск с SSE прогрессом
+- POST /pipeline/run-batch - batch запуск N pipeline параллельно
 """
 
-from typing import AsyncIterator
-
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import StreamingResponse
-from sse_starlette.sse import EventSourceResponse
 
-from ml.src.schemas.pipeline import PipelineRunRequest, PipelineRunResponse, PipelineError
-from ml.src.services.pipeline_orchestrator import run_pipeline
+from ml.src.schemas.pipeline import (
+    PipelineRunRequest,
+    PipelineRunResponse,
+    PipelineBatchRequest,
+    PipelineBatchResponse,
+    PipelineError,
+)
+from ml.src.services.pipeline_orchestrator import (
+    run_pipeline,
+    run_pipeline_batch,
+    PipelineCancelled,
+)
 
 router = APIRouter(prefix="/pipeline", tags=["pipeline"])
 
@@ -24,15 +30,7 @@ async def run_pipeline_sync(request: PipelineRunRequest) -> PipelineRunResponse:
     Синхронный запуск pipeline генерации трека.
 
     Выполняет полный цикл B1-B8 и возвращает результат.
-
-    Args:
-        request: Профиль студента и параметры генерации
-
-    Returns:
-        PipelineRunResponse: Сгенерированный трек с метаданными
-
-    Raises:
-        HTTPException: 500 если pipeline упал с ошибкой
+    Если трек отменён пользователем, возвращает 499.
     """
     from uuid import UUID
 
@@ -40,6 +38,11 @@ async def run_pipeline_sync(request: PipelineRunRequest) -> PipelineRunResponse:
         track_id = UUID(request.track_id)
         result = await run_pipeline(request.profile, track_id, request.algorithm_version)
         return result
+    except PipelineCancelled as e:
+        raise HTTPException(
+            status_code=499,  # Client Closed Request
+            detail=f"Pipeline cancelled after steps: {', '.join(e.completed_steps)}",
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -47,55 +50,23 @@ async def run_pipeline_sync(request: PipelineRunRequest) -> PipelineRunResponse:
         )
 
 
-async def _pipeline_stream(profile: dict) -> AsyncIterator[str]:
+@router.post("/run-batch", response_model=PipelineBatchResponse)
+async def run_pipeline_batch_endpoint(request: PipelineBatchRequest) -> PipelineBatchResponse:
     """
-    Генератор SSE событий для потокового выполнения pipeline.
+    Batch запуск pipeline для N треков.
 
-    Отправляет события:
-    - step_start: начало шага (B1-B8)
-    - step_complete: завершение шага с результатом
-    - error: ошибка на шаге
-    - complete: финальный результат
-
-    Args:
-        profile: Профиль студента
-
-    Yields:
-        str: SSE события в формате "event: data\ndata: json\n\n"
+    Запускает N генераций параллельно и возвращает массив результатов.
     """
-    import json
-    from ml.src.services.pipeline_orchestrator import run_pipeline_with_progress
+    from uuid import UUID
 
     try:
-        async for event in run_pipeline_with_progress(profile):
-            yield {
-                "event": event["type"],
-                "data": json.dumps(event["data"], ensure_ascii=False),
-            }
+        track_ids = [UUID(tid) for tid in request.track_ids]
+        result = await run_pipeline_batch(
+            request.profile, track_ids, request.algorithm_version
+        )
+        return result
     except Exception as e:
-        yield {
-            "event": "error",
-            "data": json.dumps(
-                {
-                    "error": str(e),
-                    "step": event.get("data", {}).get("step", "unknown"),
-                },
-                ensure_ascii=False,
-            ),
-        }
-
-
-@router.post("/run-stream")
-async def run_pipeline_stream(request: PipelineRunRequest) -> EventSourceResponse:
-    """
-    Потоковый запуск pipeline с SSE прогрессом.
-
-    Отправляет события по мере выполнения шагов B1-B8.
-
-    Args:
-        request: Профиль студента и параметры генерации
-
-    Returns:
-        EventSourceResponse: SSE stream с прогрессом выполнения
-    """
-    return EventSourceResponse(_pipeline_stream(request.profile))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Batch pipeline execution failed: {str(e)}",
+        )

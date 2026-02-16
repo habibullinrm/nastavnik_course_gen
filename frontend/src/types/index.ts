@@ -54,6 +54,55 @@ export interface StepLog {
   error_message: string | null
 }
 
+/** SSE step_update event data */
+export interface SSEStepUpdate {
+  step: string
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  description?: string
+  duration_sec?: number
+  tokens_used?: number
+  summary?: Record<string, unknown>
+  // batch fields
+  track_id?: string
+  batch_index?: number
+}
+
+/** SSE complete event data */
+export interface SSECompleteEvent {
+  total_duration_sec: number
+  total_tokens: number
+}
+
+/** SSE cancelled event data */
+export interface SSECancelledEvent {
+  completed_steps: string[]
+  last_step: string | null
+}
+
+/** SSE error event data */
+export interface SSEErrorEvent {
+  error: string
+  failed_step?: string | null
+}
+
+/** Batch generation started response */
+export interface BatchGenerationStartedResponse {
+  batch_id: string
+  track_ids: string[]
+  status: string
+  progress_url: string
+}
+
+/** SSE batch_complete event data */
+export interface SSEBatchCompleteEvent {
+  results: Array<{
+    track_id: string
+    batch_index: number
+    status: string
+    duration_sec: number | null
+  }>
+}
+
 export interface PersonalizedTrack {
   id: string
   profile_id: string
@@ -135,6 +184,18 @@ export interface GenerationProgress {
   step: string
   progress: number
   message: string
+}
+
+/** Step descriptions for UI display */
+export const STEP_DESCRIPTIONS: Record<string, string> = {
+  B1: 'Валидация и обогащение профиля',
+  B2: 'Формулировка компетенций',
+  B3: 'KSA-матрица (Знания-Умения-Навыки)',
+  B4: 'Проектирование учебных единиц',
+  B5: 'Иерархия и уровни',
+  B6: 'Формулировки проблем (PBL)',
+  B7: 'Сборка расписания',
+  B8: 'Валидация трека',
 }
 
 export interface FieldUsageItem {

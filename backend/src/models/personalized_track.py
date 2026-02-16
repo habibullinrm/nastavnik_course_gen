@@ -1,4 +1,8 @@
-"""SQLAlchemy model for personalized tracks."""
+"""SQLAlchemy model for personalized tracks.
+
+Статусы: pending → running → completed | failed
+                  running → cancelling → cancelled
+"""
 
 import uuid
 from datetime import datetime
@@ -40,6 +44,9 @@ class PersonalizedTrack(Base):
     error_message: Mapped[str | None] = mapped_column(String, nullable=True)
     generation_duration_sec: Mapped[float | None] = mapped_column(Float, nullable=True)
     batch_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    batch_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,

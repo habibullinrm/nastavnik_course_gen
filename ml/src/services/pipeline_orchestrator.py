@@ -1,10 +1,13 @@
 """Pipeline orchestrator - coordinates B1-B8 execution."""
 
+import asyncio
 import logging
 import time
 from datetime import datetime
 from typing import Any
 from uuid import UUID
+
+import httpx
 
 from ml.src.pipeline import (
     b1_validate,
@@ -34,6 +37,29 @@ STEP_DESCRIPTIONS = {
     "B8": "Валидация трека",
 }
 
+# URL бэкенда для проверки статуса отмены
+BACKEND_URL = "http://backend:8000"
+
+
+class PipelineError(Exception):
+    """Pipeline execution error."""
+
+    def __init__(self, step: str, message: str, details: Any = None):
+        self.step = step
+        self.message = message
+        self.details = details
+        super().__init__(f"Pipeline error at {step}: {message}")
+
+
+class PipelineCancelled(Exception):
+    """Pipeline was cancelled by user."""
+
+    def __init__(self, completed_steps: list[str]):
+        self.completed_steps = completed_steps
+        super().__init__(
+            f"Pipeline cancelled after steps: {', '.join(completed_steps)}"
+        )
+
 
 def _log_start(track_id: UUID, step: str, step_num: int) -> None:
     desc = STEP_DESCRIPTIONS.get(step, step)
@@ -56,14 +82,20 @@ def _log_fail(track_id: UUID, step: str, step_num: int, error: Exception) -> Non
     print(msg, flush=True)
 
 
-class PipelineError(Exception):
-    """Pipeline execution error."""
-
-    def __init__(self, step: str, message: str, details: Any = None):
-        self.step = step
-        self.message = message
-        self.details = details
-        super().__init__(f"Pipeline error at {step}: {message}")
+async def _check_cancelled(track_id: UUID) -> bool:
+    """
+    Проверяет статус трека через backend API.
+    Если статус "cancelling" — возвращает True.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(f"{BACKEND_URL}/api/tracks/{track_id}")
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("status") in ("cancelling", "cancelled")
+    except Exception as e:
+        logger.warning(f"Failed to check cancellation status for {track_id}: {e}")
+    return False
 
 
 async def run_pipeline(
@@ -73,6 +105,8 @@ async def run_pipeline(
 ) -> dict[str, Any]:
     """
     Run the complete B1-B8 pipeline.
+
+    Между шагами проверяет отмену через backend API.
 
     Args:
         profile: Student profile (validated JSON)
@@ -84,6 +118,7 @@ async def run_pipeline(
 
     Raises:
         PipelineError: If any step fails
+        PipelineCancelled: If cancelled by user
     """
     start_time = time.time()
     started_at = datetime.utcnow().isoformat()
@@ -93,6 +128,7 @@ async def run_pipeline(
 
     steps_log: list[StepLog] = []
     total_tokens = 0
+    completed_step_names: list[str] = []
 
     # Storage for intermediate results
     intermediate_results = {}
@@ -103,347 +139,144 @@ async def run_pipeline(
     print(f"[{track_id}] Тема: {topic}", flush=True)
     print(f"{'='*70}", flush=True)
 
+    # Define pipeline steps
+    async def _run_b1():
+        b1_result, b1_meta = await b1_validate.run_b1_validate(
+            profile, deepseek_client
+        )
+        intermediate_results["validated_profile"] = b1_result.model_dump()
+        return b1_result, b1_meta, [b1_meta]
+
+    async def _run_b2():
+        b2_result, b2_meta = await b2_competencies.run_b2_competencies(
+            intermediate_results["validated_profile"], deepseek_client
+        )
+        intermediate_results["competency_set"] = b2_result.model_dump()
+        return b2_result, b2_meta, [b2_meta]
+
+    async def _run_b3():
+        b3_result, b3_meta = await b3_ksa_matrix.run_b3_ksa_matrix(
+            profile,
+            intermediate_results["competency_set"],
+            deepseek_client,
+        )
+        intermediate_results["ksa_matrix"] = b3_result.model_dump()
+        return b3_result, b3_meta, [b3_meta]
+
+    async def _run_b4():
+        b4_result, b4_meta = await b4_learning_units.run_b4_learning_units(
+            intermediate_results["ksa_matrix"], deepseek_client
+        )
+        intermediate_results["learning_units"] = b4_result.model_dump()
+        return b4_result, b4_meta, [b4_meta]
+
+    async def _run_b5():
+        nonlocal b1_result_ref, b5_result_ref
+        b5_result, b5_meta = await b5_hierarchy.run_b5_hierarchy(
+            intermediate_results["learning_units"],
+            b1_result_ref.total_time_budget_minutes,
+            b1_result_ref.estimated_weeks,
+            deepseek_client,
+        )
+        b5_result_ref = b5_result
+        intermediate_results["hierarchy"] = b5_result.model_dump()
+        return b5_result, b5_meta, [b5_meta]
+
+    async def _run_b6():
+        b6_result, b6_meta = await b6_problem_formulations.run_b6_problem_formulations(
+            intermediate_results["learning_units"]["clusters"],
+            intermediate_results["learning_units"],
+            deepseek_client,
+        )
+        intermediate_results["lesson_blueprints"] = b6_result.model_dump()
+        return b6_result, b6_meta, [b6_meta]
+
+    async def _run_b7():
+        b7_result, b7_meta = await b7_schedule.run_b7_schedule(
+            intermediate_results["hierarchy"],
+            intermediate_results["lesson_blueprints"],
+            profile,
+            b5_result_ref.total_weeks,
+            deepseek_client,
+        )
+        intermediate_results["schedule"] = b7_result.model_dump()
+        return b7_result, b7_meta, [b7_meta]
+
+    async def _run_b8():
+        complete_track_data = {
+            "validated_profile": intermediate_results["validated_profile"],
+            "competency_set": intermediate_results["competency_set"],
+            "ksa_matrix": intermediate_results["ksa_matrix"],
+            "learning_units": intermediate_results["learning_units"],
+            "hierarchy": intermediate_results["hierarchy"],
+            "lesson_blueprints": intermediate_results["lesson_blueprints"],
+            "schedule": intermediate_results["schedule"],
+        }
+        b8_result, b8_meta = await b8_validation.run_b8_validation(
+            complete_track_data, profile, deepseek_client
+        )
+        intermediate_results["validation"] = b8_result.model_dump()
+        return b8_result, b8_meta, [b8_meta]
+
+    # Refs needed across steps
+    b1_result_ref = None
+    b5_result_ref = None
+
+    steps = [
+        ("B1", "B1_validate", _run_b1),
+        ("B2", "B2_competencies", _run_b2),
+        ("B3", "B3_ksa_matrix", _run_b3),
+        ("B4", "B4_learning_units", _run_b4),
+        ("B5", "B5_hierarchy", _run_b5),
+        ("B6", "B6_problem_formulations", _run_b6),
+        ("B7", "B7_schedule", _run_b7),
+        ("B8", "B8_validation", _run_b8),
+    ]
+
     try:
-        # =====================================================================
-        # B1: Validate and Enrich Profile
-        # =====================================================================
-        _log_start(track_id, "B1", 1)
-        step_start = time.time()
-        llm_calls_b1 = []
+        for step_num, (short_name, step_name, step_fn) in enumerate(steps, 1):
+            # Проверить отмену перед каждым шагом
+            if await _check_cancelled(track_id):
+                print(f"[{track_id}] ⚠ Отмена обнаружена перед {short_name}", flush=True)
+                raise PipelineCancelled(completed_step_names)
 
-        try:
-            b1_result, b1_meta = await b1_validate.run_b1_validate(
-                profile, deepseek_client
-            )
-            b1_duration = time.time() - step_start
-            b1_tokens = b1_meta["tokens_used"]
-            total_tokens += b1_tokens
+            _log_start(track_id, short_name, step_num)
+            step_start = time.time()
 
-            llm_calls_b1.append(b1_meta)
-            intermediate_results["validated_profile"] = b1_result.model_dump()
+            try:
+                result, meta, llm_calls = await step_fn()
+                step_duration = time.time() - step_start
+                step_tokens = meta["tokens_used"]
+                total_tokens += step_tokens
 
-            await step_logger.log_step(
-                track_id=track_id,
-                step_name="B1_validate",
-                step_output=b1_result.model_dump(),
-                llm_calls=llm_calls_b1,
-                duration_sec=b1_duration,
-            )
+                # Save b1_result ref for b5
+                if short_name == "B1":
+                    b1_result_ref = result
 
-            steps_log.append(
-                StepLog(
-                    step_name="B1_validate",
-                    duration_sec=b1_duration,
-                    tokens_used=b1_tokens,
-                    success=True,
+                await step_logger.log_step(
+                    track_id=track_id,
+                    step_name=step_name,
+                    step_output=result.model_dump() if hasattr(result, "model_dump") else result,
+                    llm_calls=llm_calls,
+                    duration_sec=step_duration,
                 )
-            )
-            _log_done(track_id, "B1", 1, b1_duration, b1_tokens)
 
-        except Exception as e:
-            _log_fail(track_id, "B1", 1, e)
-            raise PipelineError("B1_validate", str(e))
-
-        # =====================================================================
-        # B2: Formulate Competencies
-        # =====================================================================
-        _log_start(track_id, "B2", 2)
-        step_start = time.time()
-        llm_calls_b2 = []
-
-        try:
-            b2_result, b2_meta = await b2_competencies.run_b2_competencies(
-                intermediate_results["validated_profile"], deepseek_client
-            )
-            b2_duration = time.time() - step_start
-            b2_tokens = b2_meta["tokens_used"]
-            total_tokens += b2_tokens
-
-            llm_calls_b2.append(b2_meta)
-            intermediate_results["competency_set"] = b2_result.model_dump()
-
-            await step_logger.log_step(
-                track_id=track_id,
-                step_name="B2_competencies",
-                step_output=b2_result.model_dump(),
-                llm_calls=llm_calls_b2,
-                duration_sec=b2_duration,
-            )
-
-            steps_log.append(
-                StepLog(
-                    step_name="B2_competencies",
-                    duration_sec=b2_duration,
-                    tokens_used=b2_tokens,
-                    success=True,
+                steps_log.append(
+                    StepLog(
+                        step_name=step_name,
+                        duration_sec=step_duration,
+                        tokens_used=step_tokens,
+                        success=True,
+                    )
                 )
-            )
-            _log_done(track_id, "B2", 2, b2_duration, b2_tokens)
+                completed_step_names.append(short_name)
+                _log_done(track_id, short_name, step_num, step_duration, step_tokens)
 
-        except Exception as e:
-            _log_fail(track_id, "B2", 2, e)
-            raise PipelineError("B2_competencies", str(e))
-
-        # =====================================================================
-        # B3: KSA Matrix
-        # =====================================================================
-        _log_start(track_id, "B3", 3)
-        step_start = time.time()
-        llm_calls_b3 = []
-
-        try:
-            b3_result, b3_meta = await b3_ksa_matrix.run_b3_ksa_matrix(
-                profile,
-                intermediate_results["competency_set"],
-                deepseek_client,
-            )
-            b3_duration = time.time() - step_start
-            b3_tokens = b3_meta["tokens_used"]
-            total_tokens += b3_tokens
-
-            llm_calls_b3.append(b3_meta)
-            intermediate_results["ksa_matrix"] = b3_result.model_dump()
-
-            await step_logger.log_step(
-                track_id=track_id,
-                step_name="B3_ksa_matrix",
-                step_output=b3_result.model_dump(),
-                llm_calls=llm_calls_b3,
-                duration_sec=b3_duration,
-            )
-
-            steps_log.append(
-                StepLog(
-                    step_name="B3_ksa_matrix",
-                    duration_sec=b3_duration,
-                    tokens_used=b3_tokens,
-                    success=True,
-                )
-            )
-            _log_done(track_id, "B3", 3, b3_duration, b3_tokens)
-
-        except Exception as e:
-            _log_fail(track_id, "B3", 3, e)
-            raise PipelineError("B3_ksa_matrix", str(e))
-
-        # =====================================================================
-        # B4: Learning Units
-        # =====================================================================
-        _log_start(track_id, "B4", 4)
-        step_start = time.time()
-        llm_calls_b4 = []
-
-        try:
-            b4_result, b4_meta = await b4_learning_units.run_b4_learning_units(
-                intermediate_results["ksa_matrix"], deepseek_client
-            )
-            b4_duration = time.time() - step_start
-            b4_tokens = b4_meta["tokens_used"]
-            total_tokens += b4_tokens
-
-            llm_calls_b4.append(b4_meta)
-            intermediate_results["learning_units"] = b4_result.model_dump()
-
-            await step_logger.log_step(
-                track_id=track_id,
-                step_name="B4_learning_units",
-                step_output=b4_result.model_dump(),
-                llm_calls=llm_calls_b4,
-                duration_sec=b4_duration,
-            )
-
-            steps_log.append(
-                StepLog(
-                    step_name="B4_learning_units",
-                    duration_sec=b4_duration,
-                    tokens_used=b4_tokens,
-                    success=True,
-                )
-            )
-            _log_done(track_id, "B4", 4, b4_duration, b4_tokens)
-
-        except Exception as e:
-            _log_fail(track_id, "B4", 4, e)
-            raise PipelineError("B4_learning_units", str(e))
-
-        # =====================================================================
-        # B5: Hierarchy
-        # =====================================================================
-        _log_start(track_id, "B5", 5)
-        step_start = time.time()
-        llm_calls_b5 = []
-
-        try:
-            b5_result, b5_meta = await b5_hierarchy.run_b5_hierarchy(
-                intermediate_results["learning_units"],
-                b1_result.total_time_budget_minutes,
-                b1_result.estimated_weeks,
-                deepseek_client,
-            )
-            b5_duration = time.time() - step_start
-            b5_tokens = b5_meta["tokens_used"]
-            total_tokens += b5_tokens
-
-            llm_calls_b5.append(b5_meta)
-            intermediate_results["hierarchy"] = b5_result.model_dump()
-
-            await step_logger.log_step(
-                track_id=track_id,
-                step_name="B5_hierarchy",
-                step_output=b5_result.model_dump(),
-                llm_calls=llm_calls_b5,
-                duration_sec=b5_duration,
-            )
-
-            steps_log.append(
-                StepLog(
-                    step_name="B5_hierarchy",
-                    duration_sec=b5_duration,
-                    tokens_used=b5_tokens,
-                    success=True,
-                )
-            )
-            _log_done(track_id, "B5", 5, b5_duration, b5_tokens)
-
-        except Exception as e:
-            _log_fail(track_id, "B5", 5, e)
-            raise PipelineError("B5_hierarchy", str(e))
-
-        # =====================================================================
-        # B6: Problem Formulations
-        # =====================================================================
-        _log_start(track_id, "B6", 6)
-        step_start = time.time()
-        llm_calls_b6 = []
-
-        try:
-            b6_result, b6_meta = await b6_problem_formulations.run_b6_problem_formulations(
-                intermediate_results["learning_units"]["clusters"],
-                intermediate_results["learning_units"],
-                deepseek_client,
-            )
-            b6_duration = time.time() - step_start
-            b6_tokens = b6_meta["tokens_used"]
-            total_tokens += b6_tokens
-
-            llm_calls_b6.append(b6_meta)
-            intermediate_results["lesson_blueprints"] = b6_result.model_dump()
-
-            await step_logger.log_step(
-                track_id=track_id,
-                step_name="B6_problem_formulations",
-                step_output=b6_result.model_dump(),
-                llm_calls=llm_calls_b6,
-                duration_sec=b6_duration,
-            )
-
-            steps_log.append(
-                StepLog(
-                    step_name="B6_problem_formulations",
-                    duration_sec=b6_duration,
-                    tokens_used=b6_tokens,
-                    success=True,
-                )
-            )
-            _log_done(track_id, "B6", 6, b6_duration, b6_tokens)
-
-        except Exception as e:
-            _log_fail(track_id, "B6", 6, e)
-            raise PipelineError("B6_problem_formulations", str(e))
-
-        # =====================================================================
-        # B7: Schedule
-        # =====================================================================
-        _log_start(track_id, "B7", 7)
-        step_start = time.time()
-        llm_calls_b7 = []
-
-        try:
-            b7_result, b7_meta = await b7_schedule.run_b7_schedule(
-                intermediate_results["hierarchy"],
-                intermediate_results["lesson_blueprints"],
-                profile,
-                b5_result.total_weeks,
-                deepseek_client,
-            )
-            b7_duration = time.time() - step_start
-            b7_tokens = b7_meta["tokens_used"]
-            total_tokens += b7_tokens
-
-            llm_calls_b7.append(b7_meta)
-            intermediate_results["schedule"] = b7_result.model_dump()
-
-            await step_logger.log_step(
-                track_id=track_id,
-                step_name="B7_schedule",
-                step_output=b7_result.model_dump(),
-                llm_calls=llm_calls_b7,
-                duration_sec=b7_duration,
-            )
-
-            steps_log.append(
-                StepLog(
-                    step_name="B7_schedule",
-                    duration_sec=b7_duration,
-                    tokens_used=b7_tokens,
-                    success=True,
-                )
-            )
-            _log_done(track_id, "B7", 7, b7_duration, b7_tokens)
-
-        except Exception as e:
-            _log_fail(track_id, "B7", 7, e)
-            raise PipelineError("B7_schedule", str(e))
-
-        # =====================================================================
-        # B8: Validation
-        # =====================================================================
-        _log_start(track_id, "B8", 8)
-        step_start = time.time()
-        llm_calls_b8 = []
-
-        try:
-            complete_track_data = {
-                "validated_profile": intermediate_results["validated_profile"],
-                "competency_set": intermediate_results["competency_set"],
-                "ksa_matrix": intermediate_results["ksa_matrix"],
-                "learning_units": intermediate_results["learning_units"],
-                "hierarchy": intermediate_results["hierarchy"],
-                "lesson_blueprints": intermediate_results["lesson_blueprints"],
-                "schedule": intermediate_results["schedule"],
-            }
-
-            b8_result, b8_meta = await b8_validation.run_b8_validation(
-                complete_track_data, profile, deepseek_client
-            )
-            b8_duration = time.time() - step_start
-            b8_tokens = b8_meta["tokens_used"]
-            total_tokens += b8_tokens
-
-            llm_calls_b8.append(b8_meta)
-            intermediate_results["validation"] = b8_result.model_dump()
-
-            await step_logger.log_step(
-                track_id=track_id,
-                step_name="B8_validation",
-                step_output=b8_result.model_dump(),
-                llm_calls=llm_calls_b8,
-                duration_sec=b8_duration,
-            )
-
-            steps_log.append(
-                StepLog(
-                    step_name="B8_validation",
-                    duration_sec=b8_duration,
-                    tokens_used=b8_tokens,
-                    success=True,
-                )
-            )
-            _log_done(track_id, "B8", 8, b8_duration, b8_tokens)
-
-        except Exception as e:
-            _log_fail(track_id, "B8", 8, e)
-            raise PipelineError("B8_validation", str(e))
+            except PipelineCancelled:
+                raise
+            except Exception as e:
+                _log_fail(track_id, short_name, step_num, e)
+                raise PipelineError(step_name, str(e))
 
         # =====================================================================
         # Assemble Final Track
@@ -487,6 +320,15 @@ async def run_pipeline(
             "algorithm_version": algorithm_version,
         }
 
+    except PipelineCancelled as e:
+        total_duration = time.time() - start_time
+        print(
+            f"\n[{track_id}] Pipeline ОТМЕНЁН после {total_duration:.1f}s, "
+            f"{total_tokens} tokens, {len(completed_step_names)}/8 шагов",
+            flush=True,
+        )
+        raise
+
     except PipelineError:
         total_duration = time.time() - start_time
         print(
@@ -498,3 +340,56 @@ async def run_pipeline(
     except Exception as e:
         logger.error(f"Unexpected pipeline error: {e}")
         raise PipelineError("unknown", f"Unexpected error: {e}")
+
+
+async def run_pipeline_batch(
+    profile: dict[str, Any],
+    track_ids: list[UUID],
+    algorithm_version: str = "v1.0.0",
+) -> dict[str, Any]:
+    """
+    Run B1-B8 pipeline for N tracks (batch mode).
+
+    Для каждого шага запускает N генераций параллельно (asyncio.gather),
+    после каждого шага логирует результаты для всех треков.
+
+    Args:
+        profile: Student profile (validated JSON)
+        track_ids: List of track UUIDs
+        algorithm_version: Algorithm version identifier
+
+    Returns:
+        {"results": [result_per_track]}
+    """
+    batch_size = len(track_ids)
+    results: list[dict[str, Any]] = [{} for _ in range(batch_size)]
+
+    print(f"\n{'='*70}", flush=True)
+    print(f"Batch pipeline: {batch_size} треков", flush=True)
+    print(f"Track IDs: {[str(t) for t in track_ids]}", flush=True)
+    print(f"{'='*70}", flush=True)
+
+    # Запустить каждый pipeline параллельно через asyncio.gather
+    async def _run_single(index: int, tid: UUID) -> dict[str, Any]:
+        try:
+            result = await run_pipeline(profile, tid, algorithm_version)
+            return {"index": index, **result}
+        except PipelineCancelled as e:
+            return {"index": index, "status": "cancelled", "completed_steps": e.completed_steps}
+        except PipelineError as e:
+            return {"index": index, "status": "failed", "error": str(e)}
+        except Exception as e:
+            return {"index": index, "status": "failed", "error": str(e)}
+
+    tasks = [_run_single(i, tid) for i, tid in enumerate(track_ids)]
+    completed = await asyncio.gather(*tasks, return_exceptions=False)
+
+    for res in completed:
+        idx = res.pop("index", 0)
+        results[idx] = res
+
+    print(f"\n{'='*70}", flush=True)
+    print(f"Batch pipeline ЗАВЕРШЁН: {batch_size} треков обработано", flush=True)
+    print(f"{'='*70}\n", flush=True)
+
+    return {"results": results}
