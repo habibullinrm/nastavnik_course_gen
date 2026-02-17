@@ -73,12 +73,20 @@ export default function ManualWorkspacePage() {
   useEffect(() => { loadSession() }, [loadSession])
   useEffect(() => { loadStepData() }, [loadStepData])
 
+  // Reset prompt selection when switching steps
+  useEffect(() => {
+    setSelectedPromptId(null)
+    setPromptText('')
+    setCustomInputData(null)
+  }, [activeStep])
+
   const handleRunStep = async () => {
     setRunning(true)
     try {
       const result = await runStep(sessionId, activeStep, {
-        prompt_version_id: selectedPromptId,
-        custom_prompt: promptText || undefined,
+        prompt_version_id: selectedPromptId || undefined,
+        // custom_prompt только если нет выбранной версии (ручной ввод)
+        custom_prompt: selectedPromptId ? undefined : (promptText || undefined),
         input_data: customInputData || undefined,
         llm_params: { temperature, max_tokens: maxTokens },
         use_mock: useMock,

@@ -199,6 +199,35 @@ async def get_run_by_id(
     return result.scalar_one_or_none()
 
 
+async def _render_prompt_with_profile(
+    step_name: str,
+    profile: dict,
+    input_data: dict[str, Any],
+    prompt_text: str | None = None,
+) -> str:
+    """Рендерить промпт с реальным профилем и данными предыдущих шагов.
+
+    Если prompt_text передан — инъектирует реальные данные в существующий текст.
+    Иначе — рендерит из baseline функции.
+    """
+    payload: dict[str, Any] = {
+        "step_name": step_name,
+        "profile": profile,
+        "extra_data": input_data,
+    }
+    if prompt_text:
+        payload["prompt_text"] = prompt_text
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.post(
+            f"{ML_URL}/manual/render-prompt",
+            json=payload,
+        )
+        resp.raise_for_status()
+        render_data = resp.json()
+        return render_data["rendered_prompt"]
+
+
 async def _get_auto_input(
     session_id: uuid.UUID, step_name: str, profile_snapshot: dict, db: AsyncSession
 ) -> dict[str, Any]:
@@ -255,6 +284,12 @@ async def run_step(
     )
     run_number = (count_result.scalar() or 0) + 1
 
+    # Определить входные данные (нужно до промпта, т.к. промпт может использовать данные предыдущих шагов)
+    if input_data is None:
+        input_data = await _get_auto_input(
+            session_id, step_name, session.profile_snapshot, db
+        )
+
     # Определить промпт
     prompt_text = custom_prompt
     if not prompt_text and prompt_version_id:
@@ -263,21 +298,15 @@ async def run_step(
         if pv:
             prompt_text = pv.prompt_text
 
-    if not prompt_text:
-        # Загрузить baseline промпт из ML
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                f"{ML_URL}/manual/render-prompt",
-                json={"step_name": step_name, "profile": session.profile_snapshot},
-            )
-            resp.raise_for_status()
-            render_data = resp.json()
-            prompt_text = render_data["rendered_prompt"]
-
-    # Определить входные данные
-    if input_data is None:
-        input_data = await _get_auto_input(
-            session_id, step_name, session.profile_snapshot, db
+    if prompt_text:
+        # Любая версия (baseline или пользовательская) — инъекция реальных данных
+        prompt_text = await _render_prompt_with_profile(
+            step_name, session.profile_snapshot, input_data, prompt_text=prompt_text
+        )
+    else:
+        # Нет выбранной версии — рендер из baseline функции
+        prompt_text = await _render_prompt_with_profile(
+            step_name, session.profile_snapshot, input_data
         )
 
     # Создать запись запуска

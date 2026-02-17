@@ -82,47 +82,181 @@ async def run_llm_judge(
     """
     LLM-as-Judge оценка качества результата.
 
-    Возвращает {score: 1-10, reasoning: str}
+    Возвращает {score, summary, strengths, problems, suggestions, reasoning}
     """
-    if use_mock:
-        return {
-            "score": 7,
-            "reasoning": "Mock LLM Judge: результат выглядит корректным, "
-            "структура соответствует ожиданиям, покрытие полей достаточное.",
-        }
+    from ml.src.prompts.judge_prompt import get_judge_prompt
 
-    # Real LLM judge
+    normalized = normalize_step_name(step_name)
+
+    if use_mock:
+        return _mock_judge_response(normalized, parsed_result)
+
     from ml.src.services.llm_client_factory import get_llm_client
-    import json
 
     client = await get_llm_client(mock_mode=False)
-
-    judge_prompt = f"""You are evaluating the output of pipeline step {step_name}.
-
-RESULT TO EVALUATE:
-{json.dumps(parsed_result, ensure_ascii=False, indent=2)[:4000]}
-
-INPUT DATA:
-{json.dumps(input_data or {}, ensure_ascii=False, indent=2)[:2000]}
-
-Rate the quality on a scale of 1-10 and explain your reasoning.
-Return JSON: {{"score": <1-10>, "reasoning": "<explanation>"}}
-"""
+    judge_prompt_text = get_judge_prompt(normalized, parsed_result, input_data)
 
     try:
         from pydantic import BaseModel
 
         class JudgeResult(BaseModel):
             score: int
-            reasoning: str
+            summary: str = ""
+            strengths: list[str] = []
+            problems: list[str] = []
+            suggestions: list[str] = []
+            reasoning: str = ""
 
         result, _ = await client.chat_completion(
-            prompt=judge_prompt,
+            prompt=judge_prompt_text,
             response_model=JudgeResult,
             temperature=0.3,
-            max_tokens=1000,
+            max_tokens=2000,
         )
         return result.model_dump()
     except Exception as e:
         logger.error(f"LLM Judge failed: {e}")
-        return {"score": 0, "reasoning": f"Judge error: {e}"}
+        return {
+            "score": 0,
+            "summary": f"Ошибка Judge: {e}",
+            "strengths": [],
+            "problems": [str(e)],
+            "suggestions": [],
+            "reasoning": f"Не удалось выполнить оценку: {e}",
+        }
+
+
+def _mock_judge_response(
+    step_name: str, parsed_result: dict[str, Any]
+) -> dict[str, Any]:
+    """Сгенерировать mock-ответ Judge с базовым анализом."""
+    problems: list[str] = []
+    strengths: list[str] = []
+    suggestions: list[str] = []
+    score = 7
+
+    # Базовые проверки по структуре
+    if not parsed_result:
+        return {
+            "score": 1,
+            "summary": "Результат пустой — генерация не вернула данных.",
+            "strengths": [],
+            "problems": ["Результат пустой или None"],
+            "suggestions": ["Проверить промпт и входные данные"],
+            "reasoning": "Пустой результат не подлежит оценке.",
+        }
+
+    # Step-specific mock analysis
+    if step_name == "B1_validate":
+        if parsed_result.get("validation_status") == "valid":
+            strengths.append("Профиль прошёл валидацию без ошибок")
+        elif parsed_result.get("validation_status") == "valid_with_warnings":
+            strengths.append("Профиль валиден, есть предупреждения")
+            warnings = parsed_result.get("validation_warnings", [])
+            if warnings:
+                problems.append(f"Обнаружено {len(warnings)} предупреждений")
+        else:
+            problems.append("Профиль не прошёл валидацию")
+            score -= 2
+
+        weeks = parsed_result.get("estimated_weeks")
+        if weeks and (weeks < 4 or weeks > 52):
+            problems.append(f"estimated_weeks={weeks} вне диапазона 4-52")
+            score -= 1
+
+    elif step_name == "B2_competencies":
+        comps = parsed_result.get("competencies", [])
+        count = len(comps)
+        if count < 3:
+            problems.append(f"Слишком мало компетенций: {count} (ожидается >= 3)")
+            score -= 2
+        elif count > 15:
+            problems.append(f"Слишком много компетенций: {count} (ожидается <= 15)")
+            score -= 1
+        else:
+            strengths.append(f"Адекватное количество компетенций: {count}")
+
+        if not parsed_result.get("integral_competency_id"):
+            problems.append("Отсутствует интегративная компетенция (integral_competency_id)")
+            score -= 1
+        else:
+            strengths.append("Есть интегративная компетенция")
+
+        task_map = parsed_result.get("competency_task_map", {})
+        if not task_map:
+            problems.append("Пустая competency_task_map — компетенции не привязаны к задачам")
+            score -= 1
+
+    elif step_name == "B3_ksa_matrix":
+        k = len(parsed_result.get("knowledge_items", []))
+        s = len(parsed_result.get("skill_items", []))
+        h = len(parsed_result.get("habit_items", []))
+        if k == 0:
+            problems.append("Нет knowledge items")
+            score -= 2
+        if s == 0:
+            problems.append("Нет skill items")
+            score -= 2
+        if k > 0 and s > 0:
+            strengths.append(f"KSA-матрица: {k} знаний, {s} навыков, {h} привычек")
+
+    elif step_name == "B4_learning_units":
+        clusters = len(parsed_result.get("clusters", []))
+        if clusters == 0:
+            problems.append("Нет кластеров")
+            score -= 2
+        else:
+            strengths.append(f"Сформировано {clusters} кластеров")
+
+    elif step_name == "B7_schedule":
+        weeks = parsed_result.get("weeks", [])
+        if len(weeks) == 0:
+            problems.append("Расписание пустое — нет недель")
+            score -= 3
+        else:
+            strengths.append(f"Расписание на {len(weeks)} недель")
+        checkpoints = parsed_result.get("checkpoints", [])
+        if not checkpoints:
+            suggestions.append("Добавить контрольные точки (checkpoints)")
+
+    elif step_name == "B8_validation":
+        if parsed_result.get("overall_valid"):
+            strengths.append("Итоговая валидация пройдена")
+        else:
+            problems.append("Итоговая валидация не пройдена")
+            score -= 2
+        cf = parsed_result.get("critical_failures", 0)
+        if cf > 0:
+            problems.append(f"Критических ошибок: {cf}")
+            score -= cf
+
+    if not strengths:
+        strengths.append("Структура результата соответствует ожиданиям")
+    if not suggestions:
+        suggestions.append("Сравнить результат с предыдущими запусками для отслеживания регрессий")
+
+    score = max(1, min(10, score))
+
+    summary_parts = []
+    if strengths:
+        summary_parts.append(strengths[0])
+    if problems:
+        summary_parts.append(f"Найдено проблем: {len(problems)}")
+    summary = ". ".join(summary_parts) + "."
+
+    reasoning_parts = ["Mock Judge анализ:"]
+    if strengths:
+        reasoning_parts.append("Сильные стороны: " + "; ".join(strengths))
+    if problems:
+        reasoning_parts.append("Проблемы: " + "; ".join(problems))
+    if suggestions:
+        reasoning_parts.append("Рекомендации: " + "; ".join(suggestions))
+
+    return {
+        "score": score,
+        "summary": summary,
+        "strengths": strengths,
+        "problems": problems,
+        "suggestions": suggestions,
+        "reasoning": " ".join(reasoning_parts),
+    }

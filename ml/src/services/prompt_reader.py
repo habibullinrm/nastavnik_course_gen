@@ -140,12 +140,16 @@ def render_prompt(
     extra_data: dict[str, Any] | None = None,
 ) -> tuple[str, list[str]]:
     """
-    Отрендерить промпт с данными профиля.
+    Отрендерить промпт с данными профиля и результатами предыдущих шагов.
+
+    extra_data может содержать:
+      - ключи вида "B1_validate", "B2_competencies" и т.д. — результаты предыдущих шагов
+      - profile — профиль (дублирует основной параметр)
 
     Returns:
         (rendered_prompt, variables_used)
     """
-    prompt_text = get_baseline_prompt(step_name, profile)
+    prompt_text = _render_with_data(step_name, profile, extra_data)
 
     # Определить использованные переменные профиля
     variables_used = []
@@ -155,3 +159,106 @@ def render_prompt(
             variables_used.append(key_str)
 
     return prompt_text, variables_used
+
+
+def _render_with_data(
+    step_name: str,
+    profile: dict[str, Any],
+    extra_data: dict[str, Any] | None = None,
+) -> str:
+    """Отрендерить промпт, используя реальные данные из extra_data вместо dummy."""
+    if step_name not in PROMPT_FUNCTIONS:
+        raise ValueError(f"Unknown step: {step_name}")
+
+    module_path, func_name = PROMPT_FUNCTIONS[step_name]
+    func = _import_function(module_path, func_name)
+
+    sig = inspect.signature(func)
+    params = list(sig.parameters.keys())
+
+    if not params:
+        return func()
+
+    # Маппинг параметров функций на данные из extra_data (результаты предыдущих шагов)
+    step_data = _build_step_data(step_name, profile, extra_data or {})
+
+    args = []
+    for param_name in params:
+        if param_name in step_data:
+            args.append(step_data[param_name])
+        elif param_name in ("profile",):
+            args.append(profile)
+        else:
+            # Fallback на dummy данные
+            dummy = DUMMY_STEP_DATA.get(step_name, {})
+            args.append(dummy.get(param_name, profile))
+
+    return func(*args)
+
+
+def _build_step_data(
+    step_name: str,
+    profile: dict[str, Any],
+    extra_data: dict[str, Any],
+) -> dict[str, Any]:
+    """Построить маппинг параметров из результатов предыдущих шагов."""
+    data: dict[str, Any] = {}
+
+    if step_name == "B1_validate":
+        data["profile"] = profile
+
+    elif step_name == "B2_competencies":
+        b1 = extra_data.get("B1_validate")
+        if b1:
+            data["validated_profile"] = b1
+
+    elif step_name == "B3_ksa_matrix":
+        data["profile"] = profile
+        b2 = extra_data.get("B2_competencies")
+        if b2:
+            data["competencies"] = b2
+
+    elif step_name == "B4_learning_units":
+        b3 = extra_data.get("B3_ksa_matrix")
+        if b3:
+            data["ksa_matrix"] = b3
+
+    elif step_name == "B5_hierarchy":
+        b4 = extra_data.get("B4_learning_units")
+        if b4:
+            data["learning_units"] = b4
+        b1 = extra_data.get("B1_validate")
+        if b1:
+            data["time_budget_minutes"] = b1.get("weekly_time_budget_minutes", 300)
+            data["estimated_weeks"] = b1.get("estimated_weeks", 12)
+
+    elif step_name == "B6_problem_formulations":
+        b4 = extra_data.get("B4_learning_units")
+        if b4:
+            data["clusters"] = b4.get("clusters", [])
+            data["units"] = b4
+
+    elif step_name == "B7_schedule":
+        b5 = extra_data.get("B5_hierarchy")
+        if b5:
+            data["hierarchy"] = b5
+            data["total_weeks"] = b5.get("total_weeks", 12)
+        b6 = extra_data.get("B6_problem_formulations")
+        if b6:
+            data["blueprints"] = b6
+        data["schedule_info"] = {"weekly_hours": profile.get("weekly_hours", 5)}
+
+    elif step_name == "B8_validation":
+        # Собрать все результаты в один объект
+        complete = {}
+        for dep_step in [
+            "B1_validate", "B2_competencies", "B3_ksa_matrix",
+            "B4_learning_units", "B5_hierarchy", "B6_problem_formulations",
+            "B7_schedule",
+        ]:
+            if dep_step in extra_data:
+                complete[dep_step] = extra_data[dep_step]
+        data["complete_track"] = complete
+        data["profile"] = profile
+
+    return data

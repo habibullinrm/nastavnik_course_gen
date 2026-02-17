@@ -29,6 +29,7 @@ class RenderPromptRequest(BaseModel):
     step_name: str
     profile: dict[str, Any]
     extra_data: dict[str, Any] | None = None
+    prompt_text: str | None = None
 
 
 class RenderPromptResponse(BaseModel):

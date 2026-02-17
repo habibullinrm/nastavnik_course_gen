@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { PromptVersion } from '@/types/manual'
 import { getPromptVersions, createPromptVersion, rollbackPrompt } from '@/services/manualApi'
 
@@ -17,16 +17,12 @@ export default function PromptEditor({ stepName, selectedVersionId, onVersionSel
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    loadVersions()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepName])
-
-  const loadVersions = async () => {
+  const loadVersions = useCallback(async (autoSelect: boolean = false) => {
     try {
       const data = await getPromptVersions(stepName)
       setVersions(data)
-      if (data.length > 0 && !selectedVersionId) {
+      // Auto-select latest version when switching steps or when explicitly requested
+      if (data.length > 0 && autoSelect) {
         const latest = data[0]
         onVersionSelect(latest.id, latest.prompt_text)
         setEditText(latest.prompt_text)
@@ -34,7 +30,16 @@ export default function PromptEditor({ stepName, selectedVersionId, onVersionSel
     } catch (e) {
       console.error('Failed to load versions:', e)
     }
-  }
+    // onVersionSelect intentionally excluded — only called conditionally
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepName])
+
+  // When step changes, always reload and auto-select the latest version
+  useEffect(() => {
+    setEditing(false)
+    setChangeDesc('')
+    loadVersions(true)
+  }, [loadVersions])
 
   const handleSaveVersion = async () => {
     if (!editText.trim()) return
@@ -43,8 +48,11 @@ export default function PromptEditor({ stepName, selectedVersionId, onVersionSel
       const newVersion = await createPromptVersion(stepName, editText, changeDesc || undefined)
       setEditing(false)
       setChangeDesc('')
+      // Reload versions list first, then select the new version
+      const data = await getPromptVersions(stepName)
+      setVersions(data)
       onVersionSelect(newVersion.id, newVersion.prompt_text)
-      await loadVersions()
+      setEditText(newVersion.prompt_text)
     } catch (e) {
       console.error('Failed to save version:', e)
     } finally {
@@ -56,9 +64,11 @@ export default function PromptEditor({ stepName, selectedVersionId, onVersionSel
     setLoading(true)
     try {
       const newVersion = await rollbackPrompt(stepName, version)
+      // Reload versions list first, then select
+      const data = await getPromptVersions(stepName)
+      setVersions(data)
       onVersionSelect(newVersion.id, newVersion.prompt_text)
       setEditText(newVersion.prompt_text)
-      await loadVersions()
     } catch (e) {
       console.error('Failed to rollback:', e)
     } finally {
@@ -89,6 +99,9 @@ export default function PromptEditor({ stepName, selectedVersionId, onVersionSel
             }}
             className="text-sm border rounded px-2 py-1"
           >
+            {versions.length === 0 && (
+              <option value="">Нет версий</option>
+            )}
             {versions.map(v => (
               <option key={v.id} value={v.id}>
                 v{v.version} {v.is_baseline ? '(baseline)' : ''} {v.change_description ? `- ${v.change_description}` : ''}

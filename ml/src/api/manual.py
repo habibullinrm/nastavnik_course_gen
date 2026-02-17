@@ -31,6 +31,7 @@ from ml.src.schemas.manual import (
     EvaluateResponse,
 )
 from ml.src.services.manual_executor import execute_step
+from ml.src.services.prompt_injector import inject_real_data
 from ml.src.services.prompt_reader import get_all_baselines, render_prompt
 
 logger = logging.getLogger(__name__)
@@ -55,15 +56,30 @@ async def manual_execute_step(request: ManualExecuteRequest) -> ManualExecuteRes
 
 @router.post("/render-prompt", response_model=RenderPromptResponse)
 async def manual_render_prompt(request: RenderPromptRequest) -> RenderPromptResponse:
-    """Отрендерить промпт с данными профиля."""
+    """Отрендерить промпт с данными профиля.
+
+    Если prompt_text передан — инъектирует реальные данные в существующий текст.
+    Иначе — рендерит из baseline функции.
+    """
     try:
-        rendered, variables = render_prompt(
-            request.step_name, request.profile, request.extra_data
-        )
+        if request.prompt_text:
+            rendered = inject_real_data(
+                prompt_text=request.prompt_text,
+                step_name=request.step_name,
+                profile=request.profile,
+                input_data=request.extra_data,
+            )
+            variables_used = [
+                key for key in request.profile if str(key) in rendered
+            ]
+        else:
+            rendered, variables_used = render_prompt(
+                request.step_name, request.profile, request.extra_data
+            )
         return RenderPromptResponse(
             step_name=request.step_name,
             rendered_prompt=rendered,
-            variables_used=variables,
+            variables_used=variables_used,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
