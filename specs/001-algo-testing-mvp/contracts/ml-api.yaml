@@ -90,6 +90,48 @@ paths:
                   - event: completed, data: { track: PersonalizedTrack, metadata: {...} }
                   - event: error, data: { step: "B3", message: "...", retryable: true }
 
+  /pipeline/run-batch:
+    post:
+      tags: [pipeline]
+      operationId: runPipelineBatch
+      summary: Batch-запуск pipeline B1-B8 для N треков
+      description: |
+        Запускает pipeline B1-B8 для N треков из одного профиля.
+        Для каждого трека выполняет полный pipeline последовательно.
+        Между шагами проверяет статус каждого трека на отмену (cancelling).
+        При отмене конкретного трека — прекращает его pipeline, продолжает остальные.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PipelineBatchRequest"
+      responses:
+        "200":
+          description: Batch pipeline завершён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineBatchResponse"
+        "400":
+          description: Невалидный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineError"
+        "499":
+          description: Pipeline отменён (все треки cancelled)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineError"
+        "500":
+          description: Ошибка LLM или внутренняя ошибка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineError"
+
   # ===================== CDV =====================
   /cdv/calculate:
     post:
@@ -205,7 +247,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [completed, failed, skipped]
+          enum: [completed, failed, skipped, cancelled]
         error:
           type: string
           nullable: true
@@ -224,6 +266,50 @@ components:
         details:
           type: string
           nullable: true
+
+    PipelineBatchRequest:
+      type: object
+      required: [profile, track_ids]
+      properties:
+        profile:
+          type: object
+          description: "Полная структура StudentProfile"
+        track_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: "ID треков для batch-генерации"
+        algorithm_version:
+          type: string
+          default: "0.1.0"
+
+    PipelineBatchResponse:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              track_id:
+                type: string
+                format: uuid
+              success:
+                type: boolean
+              track:
+                type: object
+                nullable: true
+                description: "PersonalizedTrack (null если failed/cancelled)"
+              metadata:
+                $ref: "#/components/schemas/GenerationMetadata"
+              error:
+                type: string
+                nullable: true
+              status:
+                type: string
+                enum: [completed, failed, cancelled]
 
     CDVCalculateRequest:
       type: object

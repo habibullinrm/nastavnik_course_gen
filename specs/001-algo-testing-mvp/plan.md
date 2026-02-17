@@ -11,6 +11,8 @@
 
 **Технический подход**: Микросервисная архитектура с 4 Docker-контейнерами (frontend, backend, ml, db). Backend (FastAPI) управляет профилями и треками, ML-сервис (FastAPI) выполняет pipeline B1-B8 через DeepSeek API с retry механизмом, Frontend (Next.js) обеспечивает UI для загрузки, мониторинга генерации и просмотра результатов. PostgreSQL хранит профили, треки и детальные audit logs всех промежуточных шагов с retention policy 30 дней. Все сервисы используют async-first подход (asyncpg, httpx, async def endpoints).
 
+**Дополнительные возможности (Phase 4a)**: Real-time прогресс генерации через SSE с DB polling (именованные события: step_update, complete, cancelled, error), ручная остановка генерации (cancel → cancelling → cancelled), batch-генерация N треков (2-5) с общим batch_id. Background tasks через asyncio.create_task, POST /generate возвращает HTTP 202 Accepted немедленно.
+
 ## Technical Context
 
 **Language/Version**: Python 3.11+ (backend, ml), TypeScript 5.3+ (frontend)
@@ -349,7 +351,9 @@ backend/                           # Backend API сервис (FastAPI)
 │   ├── env.py
 │   ├── script.py.mako
 │   └── versions/
-│       └── 001_initial_schema.py
+│       ├── 001_initial_schema.py
+│       ├── 002_add_generation_logs.py
+│       └── 003_add_batch_id.py    # batch_id колонка + индекс
 ├── src/
 │   ├── api/                       # FastAPI routers
 │   │   ├── health.py              # Health check endpoints
@@ -438,6 +442,8 @@ frontend/                          # Next.js UI (TypeScript + Tailwind)
 │   │   ├── globals.css            # Tailwind styles
 │   │   ├── profiles/              # Profile upload & list
 │   │   ├── tracks/                # Track detail & list
+│   │   │   └── generate/
+│   │   │       └── page.tsx       # Генерация (одиночная + batch)
 │   │   └── qa/                    # QA report viewing
 │   ├── components/                # React components
 │   │   ├── ProfileUpload/         # JSON upload component
@@ -445,11 +451,12 @@ frontend/                          # Next.js UI (TypeScript + Tailwind)
 │   │   ├── TreeView/              # Hierarchical track view
 │   │   ├── WeeklySchedule/        # Weekly schedule component
 │   │   ├── FieldUsage/            # Field usage indicators
-│   │   └── GenerationProgress/    # SSE progress tracking
+│   │   ├── GenerationProgress/    # SSE progress tracking (real-time B1-B8 + cancel)
+│   │   └── BatchGenerationProgress/ # Batch SSE progress (N треков)
 │   ├── services/
-│   │   └── api.ts                 # Backend API client (fetch)
+│   │   └── api.ts                 # Backend API client (fetch + cancelTrack + generateTrackBatch)
 │   └── types/
-│       └── index.ts               # TypeScript types
+│       └── index.ts               # TypeScript types (+ SSE event types)
 ├── tests/
 │   └── e2e/                       # Playwright E2E tests
 │       ├── profile-upload.spec.ts

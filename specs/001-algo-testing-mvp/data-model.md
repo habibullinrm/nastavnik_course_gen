@@ -88,10 +88,11 @@
 | `generation_metadata` | JSONB | NOT NULL | `{ algorithm_version, started_at, finished_at, steps_log: [...], llm_calls_count, total_tokens }` |
 | `algorithm_version` | VARCHAR(50) | NOT NULL | Семантическая версия алгоритма |
 | `validation_b8` | JSONB | NULL | Результат валидации шага B8: `ValidationResult` |
-| `status` | VARCHAR(20) | NOT NULL | `pending` / `generating` / `completed` / `failed` |
+| `status` | VARCHAR(20) | NOT NULL | `pending` / `running` / `completed` / `failed` / `cancelling` / `cancelled` |
 | `error_message` | TEXT | NULL | Сообщение ошибки (если status=failed) |
 | `generation_duration_sec` | FLOAT | NULL | Длительность генерации в секундах |
 | `batch_index` | INT | NULL | Номер в пакетной генерации (0-based, NULL для одиночной) |
+| `batch_id` | UUID | NULL | ID группы batch-генерации (NULL для одиночной) |
 | `created_at` | TIMESTAMPTZ | NOT NULL | DEFAULT now() |
 | `updated_at` | TIMESTAMPTZ | NOT NULL | DEFAULT now() |
 
@@ -100,13 +101,19 @@
 - BTREE: `profile_id` (FK lookup)
 - BTREE: `qa_report_id` (FK lookup)
 - BTREE: `status` (фильтрация)
+- BTREE: `batch_id` (batch lookup)
 - BTREE: `created_at DESC` (сортировка)
 
 **Статусы (State transitions):**
 ```
-pending → generating → completed
-                    ↘ failed
+pending → running → completed
+                 ↘ failed
+                 ↘ cancelling → cancelled
 ```
+
+**Примечание**: Статус `generating` переименован в `running` для единообразия.
+Статус `cancelling` — промежуточный, устанавливается при запросе отмены.
+ML-сервис проверяет статус между шагами и переводит в `cancelled`.
 
 ---
 
@@ -269,13 +276,21 @@ QAReport
 
 ## Миграции
 
-Начальная миграция создаёт все 3 таблицы, индексы и FK-ограничения. Alembic используется для версионирования схемы.
+Alembic используется для версионирования схемы.
 
 ```python
 # alembic/versions/001_initial_schema.py
 # Создание таблиц: student_profiles, personalized_tracks, qa_reports, generation_logs
 # Создание индексов
 # Создание FK constraints с ON DELETE CASCADE для profile_id и track_id
+
+# alembic/versions/002_add_generation_logs.py
+# Добавление таблицы generation_logs (если не была в 001)
+
+# alembic/versions/003_add_batch_id.py
+# Добавление колонки batch_id (UUID, nullable) в personalized_tracks
+# Добавление BTREE индекса на batch_id
+# Обновление статусов: running, cancelling, cancelled
 ```
 
 **ON DELETE поведение:**

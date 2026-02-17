@@ -199,7 +199,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [pending, generating, completed, failed]
+            enum: [pending, running, completed, failed, cancelling, cancelled]
         - name: limit
           in: query
           schema:
@@ -217,6 +217,98 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TrackListResponse"
+
+  /api/tracks/{track_id}/cancel:
+    post:
+      tags: [tracks]
+      operationId: cancelTrack
+      summary: Остановка активной генерации
+      description: |
+        Устанавливает статус трека в "cancelling". ML-сервис проверяет
+        статус между шагами и прерывает pipeline. Завершённые шаги сохраняются.
+      parameters:
+        - name: track_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Отмена запрошена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: cancelling
+                  message:
+                    type: string
+                    example: Cancellation requested
+        "400":
+          description: Трек не в статусе running
+        "404":
+          description: Трек не найден
+
+  /api/tracks/generate-batch:
+    post:
+      tags: [tracks]
+      operationId: generateTrackBatch
+      summary: Запуск batch-генерации N треков
+      description: |
+        Создаёт N треков с общим batch_id и запускает фоновую задачу
+        для ML batch pipeline. Возвращает 202 с batch_id и track_ids.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profile_id, batch_size]
+              properties:
+                profile_id:
+                  type: string
+                  format: uuid
+                batch_size:
+                  type: integer
+                  minimum: 2
+                  maximum: 5
+      responses:
+        "202":
+          description: Batch-генерация запущена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchGenerationStartedResponse"
+        "400":
+          description: Невалидные параметры
+        "404":
+          description: Профиль не найден
+
+  /api/tracks/batch/{batch_id}/progress:
+    get:
+      tags: [tracks]
+      operationId: getBatchProgress
+      summary: SSE-поток прогресса batch-генерации
+      description: |
+        Server-Sent Events для отслеживания прогресса всех треков в batch.
+        События группируются по шагам B1-B8 для каждого трека.
+      parameters:
+        - name: batch_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
 
   /api/tracks/{track_id}/field-usage:
     get:
@@ -704,9 +796,18 @@ components:
           description: Результат валидации B8
         status:
           type: string
-          enum: [pending, generating, completed, failed]
+          enum: [pending, running, completed, failed, cancelling, cancelled]
         generation_duration_sec:
           type: number
+        batch_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID группы batch-генерации (null для одиночной)
+        batch_index:
+          type: integer
+          nullable: true
+          description: Номер в batch (0-based)
         created_at:
           type: string
           format: date-time
@@ -764,6 +865,78 @@ components:
           type: array
           items:
             type: string
+
+    BatchGenerationStartedResponse:
+      type: object
+      properties:
+        batch_id:
+          type: string
+          format: uuid
+        track_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        batch_size:
+          type: integer
+        status:
+          type: string
+          example: running
+        progress_url:
+          type: string
+          example: "/api/tracks/batch/{batch_id}/progress"
+
+    SSEStepUpdateEvent:
+      type: object
+      description: "SSE event: step_update — прогресс отдельного шага"
+      properties:
+        step:
+          type: string
+          enum: [B1, B2, B3, B4, B5, B6, B7, B8]
+        status:
+          type: string
+          enum: [running, completed, failed]
+        description:
+          type: string
+        duration_sec:
+          type: number
+          nullable: true
+        tokens_used:
+          type: integer
+          nullable: true
+        summary:
+          type: object
+          nullable: true
+
+    SSECompleteEvent:
+      type: object
+      description: "SSE event: complete — генерация завершена"
+      properties:
+        total_duration_sec:
+          type: number
+        total_tokens:
+          type: integer
+
+    SSECancelledEvent:
+      type: object
+      description: "SSE event: cancelled — генерация остановлена"
+      properties:
+        completed_steps:
+          type: array
+          items:
+            type: string
+        last_step:
+          type: string
+
+    SSEErrorEvent:
+      type: object
+      description: "SSE event: error — ошибка генерации"
+      properties:
+        error:
+          type: string
+        failed_step:
+          type: string
+          nullable: true
 
     BatchStartedResponse:
       type: object
