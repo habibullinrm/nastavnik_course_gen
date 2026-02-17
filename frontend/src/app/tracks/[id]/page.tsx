@@ -234,7 +234,7 @@ export default function TrackDetailPage() {
       <div>
         {activeTab === 'tree' && <TreeView trackData={track.track_data} />}
         {activeTab === 'schedule' && <WeeklySchedule trackData={track.track_data} />}
-        {activeTab === 'metadata' && <TrackMetadata track={track} />}
+        {activeTab === 'metadata' && <TrackMetadata track={track as unknown as Record<string, unknown>} />}
         {activeTab === 'fields' && <FieldUsage trackId={trackId} />}
       </div>
     </div>

@@ -45,6 +45,12 @@ export default function RootLayout({
                   >
                     Профили
                   </Link>
+                  <Link
+                    href="/manual"
+                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 border-b-2 border-transparent hover:border-indigo-500"
+                  >
+                    Отладка
+                  </Link>
                 </div>
               </div>
             </div>

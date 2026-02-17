@@ -40,12 +40,13 @@ app.add_middleware(
 
 
 # Register routers
-from backend.src.api import profiles, tracks, logs, health
+from backend.src.api import profiles, tracks, logs, health, manual
 
 app.include_router(profiles.router)
 app.include_router(tracks.router)
 app.include_router(logs.router)
 app.include_router(health.router)
+app.include_router(manual.router)
 
 # TODO: Register QA and Export routers when implemented
 # from backend.src.api import qa, export

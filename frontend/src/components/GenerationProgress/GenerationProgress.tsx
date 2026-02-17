@@ -123,12 +123,13 @@ export default function GenerationProgress({ trackId, onComplete }: GenerationPr
     };
 
     // Listen for named events
-    eventSource.addEventListener('step_update', (e) => handleEvent('step_update', e.data));
-    eventSource.addEventListener('complete', (e) => handleEvent('complete', e.data));
-    eventSource.addEventListener('cancelled', (e) => handleEvent('cancelled', e.data));
+    eventSource.addEventListener('step_update', (e) => handleEvent('step_update', (e as MessageEvent).data));
+    eventSource.addEventListener('complete', (e) => handleEvent('complete', (e as MessageEvent).data));
+    eventSource.addEventListener('cancelled', (e) => handleEvent('cancelled', (e as MessageEvent).data));
     eventSource.addEventListener('error', (e) => {
-      if (e.data) {
-        handleEvent('error', e.data);
+      const me = e as MessageEvent;
+      if (me.data) {
+        handleEvent('error', me.data);
       }
     });
 
