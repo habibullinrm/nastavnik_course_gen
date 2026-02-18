@@ -120,6 +120,7 @@ class ProfileSummary(BaseModel):
     id: UUID
     filename: str
     topic: str
+    profile_name: str | None = None
     experience_level: str | None
     created_at: datetime
 
@@ -134,3 +135,13 @@ class ProfileDetail(BaseModel):
     validation_result: ValidationResult
     created_at: datetime
     updated_at: datetime
+
+
+class ProfileFormResponse(BaseModel):
+    """Ответ после создания или обновления профиля через форму."""
+    id: UUID
+    topic: str
+    experience_level: str | None
+    validation_result: ValidationResult
+    created_at: datetime
+    updated_at: datetime | None = None

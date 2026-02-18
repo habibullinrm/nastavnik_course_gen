@@ -1,0 +1,60 @@
+{
+  "topic": "Алгоритмы сортировки",
+  "subject_area": "",
+  "topic_scope": "",
+  "role": "",
+  "experience_level": "",
+  "formal_education": "",
+  "identified_risks": [],
+  "novice_mode": false,
+  "motivation_external": "",
+  "motivation_internal": "",
+  "goal_type": "",
+  "has_deadline": false,
+  "deadline_date": "",
+  "desired_outcomes": [],
+  "target_context": "",
+  "outcome_source": "user",
+  "target_tasks": [],
+  "tasks_source": "user",
+  "task_hierarchy": [],
+  "easiest_task_id": "",
+  "peak_task_id": "",
+  "subtasks": [],
+  "subtasks_source": "user",
+  "already_known_subtasks": [],
+  "primary_context": "",
+  "secondary_context": "",
+  "context_type": "",
+  "current_approach": "",
+  "approach_gaps": [],
+  "diagnostic_result": "",
+  "key_barriers": [],
+  "barriers_source": "user",
+  "confusing_concepts": [],
+  "concepts_source": "user",
+  "theory_format_preference": "examples_first",
+  "theory_format_details": "",
+  "best_material_reference": "",
+  "instruction_format": [
+    "checklist"
+  ],
+  "feedback_type": [
+    "error_with_explanation"
+  ],
+  "practice_format": [
+    "compare_with_standard"
+  ],
+  "daily_practice_minutes": 10,
+  "practice_windows": [],
+  "needs_reminder": true,
+  "mastery_signals": [],
+  "support_tools": [
+    "progress_tracker"
+  ],
+  "weekly_hours": 5,
+  "schedule": [],
+  "learning_format": "",
+  "support_channel": "",
+  "success_criteria": []
+}

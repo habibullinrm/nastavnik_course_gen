@@ -12,6 +12,8 @@ import type {
   QAReportSummary,
   FieldUsageResponse,
   BatchGenerationStartedResponse,
+  ProfileFormState,
+  ProfileFormResponse,
 } from '@/types'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -168,3 +170,20 @@ export function createProgressEventSource(url: string): EventSource {
 }
 
 export { APIError }
+
+// Profile Form endpoints (003-manual-profile)
+export async function createProfileFromForm(profileData: ProfileFormState): Promise<ProfileFormResponse> {
+  return fetchAPI<ProfileFormResponse>('/api/profiles/form', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profileData),
+  })
+}
+
+export async function updateProfile(id: string, profileData: ProfileFormState): Promise<ProfileFormResponse> {
+  return fetchAPI<ProfileFormResponse>(`/api/profiles/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(profileData),
+  })
+}

@@ -96,6 +96,8 @@ git push --no-verify
 ## Active Technologies
 - Python 3.11+ (backend, ML), TypeScript/Next.js (frontend) + FastAPI, Next.js 14+, Tailwind CSS, httpx (async HTTP), Pydantic v2, SQLAlchemy 2.0 (async), alembic (001-algo-testing-mvp)
 - PostgreSQL 16 (asyncpg) (001-algo-testing-mvp)
+- TypeScript (Next.js 14), Python 3.11 + FastAPI, SQLAlchemy 2.0 (async), Pydantic v2, Tailwind CSS (003-manual-profile)
+- PostgreSQL (JSONB), без файлового хранилища (003-manual-profile)
 
 ## Recent Changes
 - 001-algo-testing-mvp: Added Python 3.11+ (backend, ML), TypeScript/Next.js (frontend) + FastAPI, Next.js 14+, Tailwind CSS, httpx (async HTTP), Pydantic v2, SQLAlchemy 2.0 (async), alembic

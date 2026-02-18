@@ -1,20 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import type { ManualSession } from '@/types/manual'
 import type { ProfileSummary } from '@/types'
 import { listSessions, createSession, deleteSession, loadBaselines } from '@/services/manualApi'
 import { listProfiles } from '@/services/api'
 
-export default function ManualSessionsPage() {
+function ManualSessionsContent() {
+  const searchParams = useSearchParams()
+  const preselectedProfileId = searchParams.get('profile_id') ?? ''
+
   const [sessions, setSessions] = useState<ManualSession[]>([])
   const [profiles, setProfiles] = useState<ProfileSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
-  const [selectedProfile, setSelectedProfile] = useState('')
+  const [selectedProfile, setSelectedProfile] = useState(preselectedProfileId)
   const [sessionName, setSessionName] = useState('')
-  const [showCreate, setShowCreate] = useState(false)
+  const [showCreate, setShowCreate] = useState(!!preselectedProfileId)
 
   useEffect(() => {
     load()
@@ -30,8 +34,9 @@ export default function ManualSessionsPage() {
       ])
       setSessions(sessData.sessions)
       setProfiles(profData)
-      if (profData.length > 0 && !selectedProfile) {
-        setSelectedProfile(profData[0].id)
+      // Предзаполняем профиль из URL если не выбран вручную
+      if (!selectedProfile && profData.length > 0) {
+        setSelectedProfile(preselectedProfileId || profData[0].id)
       }
     } catch (e) {
       console.error('Failed to load:', e)
@@ -75,7 +80,7 @@ export default function ManualSessionsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="manual-sessions-page">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Ручной режим отладки</h1>
@@ -112,7 +117,7 @@ export default function ManualSessionsPage() {
               >
                 {profiles.map(p => (
                   <option key={p.id} value={p.id}>
-                    {p.topic} ({p.experience_level || 'N/A'})
+                    {p.profile_name || p.topic} ({p.experience_level || 'N/A'})
                   </option>
                 ))}
               </select>
@@ -182,5 +187,13 @@ export default function ManualSessionsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ManualSessionsPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-8 text-gray-500">Загрузка...</div>}>
+      <ManualSessionsContent />
+    </Suspense>
   )
 }

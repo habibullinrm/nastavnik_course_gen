@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react'
 interface TrackSummary {
   id: string
   profile_id: string
-  topic: string
+  topic: string | null
   status: string
   generation_duration_sec: number | null
   created_at: string
@@ -73,10 +73,10 @@ export default function TracksListPage() {
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
           <p className="text-gray-600 mb-4">Пока нет сгенерированных треков</p>
           <Link
-            href="/"
+            href="/profiles"
             className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Загрузить профиль и создать трек
+            Выбрать профиль для генерации
           </Link>
         </div>
       ) : (
@@ -109,7 +109,7 @@ export default function TracksListPage() {
                       href={`/tracks/${track.id}`}
                       className="text-blue-600 hover:text-blue-800 font-medium"
                     >
-                      {track.topic}
+                      {track.topic || `Трек ${track.id.slice(0, 8)}`}
                     </Link>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

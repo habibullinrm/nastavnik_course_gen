@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 
 from backend.src.core.config import settings
 from backend.src.models.personalized_track import PersonalizedTrack
+from backend.src.models.student_profile import StudentProfile
 from backend.src.schemas.track import (
     BatchGenerationStartedResponse,
     GenerationStartedResponse,
@@ -406,10 +407,20 @@ async def list_tracks(
     count_result = await db.execute(select(func.count()).select_from(count_query.subquery()))
     total = count_result.scalar() or 0
 
+    # Загружаем профили для получения topic
+    profile_ids = list({t.profile_id for t in tracks if t.profile_id})
+    profile_topics: dict[uuid.UUID, str] = {}
+    if profile_ids:
+        profiles_result = await db.execute(
+            select(StudentProfile.id, StudentProfile.topic).where(StudentProfile.id.in_(profile_ids))
+        )
+        profile_topics = {row[0]: row[1] for row in profiles_result.all()}
+
     items = [
         TrackSummary(
             id=track.id,
             profile_id=track.profile_id,
+            topic=profile_topics.get(track.profile_id),
             status=track.status,
             algorithm_version=track.algorithm_version,
             generation_duration_sec=track.generation_duration_sec,

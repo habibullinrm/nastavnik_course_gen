@@ -1,13 +1,15 @@
 """API endpoints for student profiles."""
 
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.src.core.database import get_db
 from backend.src.schemas.student_profile import (
     ProfileDetail,
+    ProfileFormResponse,
     ProfileSummary,
     ProfileUploadResponse,
 )
@@ -66,6 +68,7 @@ async def list_profiles(
                 id=p.id,
                 filename=p.filename,
                 topic=p.topic,
+                profile_name=p.data.get("profile_name") if isinstance(p.data, dict) else None,
                 experience_level=p.experience_level,
                 created_at=p.created_at,
             )
@@ -73,6 +76,52 @@ async def list_profiles(
         ]
     }
 
+
+
+
+@router.post("/form", response_model=ProfileFormResponse, status_code=201)
+async def create_profile_from_form(
+    profile_data: Annotated[dict[str, Any], Body()],
+    db: AsyncSession = Depends(get_db),
+):
+    """Создание профиля из данных формы (JSON body, без загрузки файла)."""
+    if not profile_data.get("topic"):
+        raise HTTPException(
+            status_code=422,
+            detail=[{"loc": ["body", "topic"], "msg": "field required", "type": "value_error.missing"}],
+        )
+
+    profile, validation_result = await profile_service.create_from_form(db, profile_data)
+
+    return ProfileFormResponse(
+        id=profile.id,
+        topic=profile.topic,
+        experience_level=profile.experience_level,
+        validation_result=validation_result,
+        created_at=profile.created_at,
+    )
+
+
+@router.put("/{profile_id}", response_model=ProfileFormResponse)
+async def update_profile(
+    profile_id: UUID,
+    profile_data: Annotated[dict[str, Any], Body()],
+    db: AsyncSession = Depends(get_db),
+):
+    """Обновление существующего профиля (полная замена data)."""
+    try:
+        profile, validation_result = await profile_service.update_profile(db, profile_id, profile_data)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Профиль не найден")
+
+    return ProfileFormResponse(
+        id=profile.id,
+        topic=profile.topic,
+        experience_level=profile.experience_level,
+        validation_result=validation_result,
+        created_at=profile.created_at,
+        updated_at=profile.updated_at,
+    )
 
 @router.get("/{profile_id}", response_model=ProfileDetail)
 async def get_profile(

@@ -92,7 +92,15 @@ function GeneratePageContent() {
     return (
       <main className="min-h-screen p-8">
         <div className="max-w-2xl mx-auto space-y-6">
-          <h1 className="text-3xl font-bold">Генерация трека</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold">Генерация трека</h1>
+            <a
+              href={`/manual${profileId ? `?profile_id=${profileId}` : ''}`}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+            >
+              🔧 Отладка промптов
+            </a>
+          </div>
 
           {/* Mode Toggle */}
           <div className="flex gap-2">
