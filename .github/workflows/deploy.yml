@@ -82,11 +82,11 @@ jobs:
             [ -n "${NEXT_PUBLIC_API_URL}" ] && sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}|" .env
 
             echo "==> Rebuilding Docker images"
-            docker compose build --progress=plain
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml build --progress=plain
 
             echo "==> Starting containers (postgres_data volume is preserved)"
             # Используем 'up -d', а НЕ 'down -v' — том postgres_data не удаляется
-            docker compose up -d
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
             echo "==> Waiting for PostgreSQL to be ready"
             for i in $(seq 1 30); do
