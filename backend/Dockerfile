@@ -21,7 +21,7 @@ COPY pyproject.toml ./
 # actual source code is copied in the next layer (COPY . . overwrites the stub)
 RUN mkdir -p src && touch src/__init__.py && \
     pip install setuptools>=68.0 && \
-    pip install --no-build-isolation -e .
+    pip install --no-build-isolation -e .[dev]
 
 # Copy actual source code (overwrites the stub src/__init__.py)
 COPY . .
