@@ -210,7 +210,11 @@ def _build_step_data(
     elif step_name == "B2_competencies":
         b1 = extra_data.get("B1_validate")
         if b1:
-            data["validated_profile"] = b1
+            # B1 output intentionally excludes original_profile — inject it here
+            validated = dict(b1)
+            if not validated.get("original_profile"):
+                validated["original_profile"] = profile
+            data["validated_profile"] = validated
 
     elif step_name == "B3_ksa_matrix":
         data["profile"] = profile
