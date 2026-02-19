@@ -36,6 +36,7 @@ SAMPLE_PROFILE = {
 }
 
 
+@pytest.mark.skip(reason="Требует запущенные контейнеры и реальный DEEPSEEK_API_KEY")
 @pytest.mark.asyncio
 async def test_full_generation_cycle():
     """
