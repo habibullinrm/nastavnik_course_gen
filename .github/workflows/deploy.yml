@@ -86,7 +86,7 @@ jobs:
 
             echo "==> Starting containers (postgres_data volume is preserved)"
             # Используем 'up -d', а НЕ 'down -v' — том postgres_data не удаляется
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate
 
             echo "==> Waiting for PostgreSQL to be ready"
             for i in $(seq 1 30); do
