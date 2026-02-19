@@ -114,9 +114,12 @@ export default function ProfilesListPage() {
               {profiles.map((profile) => (
                 <tr key={profile.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
-                    <span className="text-gray-900 font-medium">
+                    <Link
+                      href={`/profiles/${profile.id}`}
+                      className="text-gray-900 font-medium hover:text-blue-600"
+                    >
                       {profile.profile_name || profile.topic}
-                    </span>
+                    </Link>
                     {profile.profile_name && (
                       <div className="text-xs text-gray-400 mt-0.5">{profile.topic}</div>
                     )}

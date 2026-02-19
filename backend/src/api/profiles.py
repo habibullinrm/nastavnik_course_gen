@@ -4,10 +4,13 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.src.core.database import get_db
+from backend.src.models.personalized_track import PersonalizedTrack
 from backend.src.schemas.student_profile import (
+    LastTrackResponse,
     ProfileDetail,
     ProfileFormResponse,
     ProfileSummary,
@@ -122,6 +125,30 @@ async def update_profile(
         created_at=profile.created_at,
         updated_at=profile.updated_at,
     )
+
+@router.get("/{profile_id}/last-track", response_model=LastTrackResponse)
+async def get_last_track(
+    profile_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Возвращает краткую информацию о последнем треке профиля."""
+    result = await db.execute(
+        select(PersonalizedTrack)
+        .where(PersonalizedTrack.profile_id == profile_id)
+        .order_by(PersonalizedTrack.created_at.desc())
+        .limit(1)
+    )
+    track = result.scalar_one_or_none()
+
+    if not track:
+        raise HTTPException(status_code=404, detail="Для этого профиля треки не найдены")
+
+    return LastTrackResponse(
+        track_id=track.id,
+        status=track.status,
+        created_at=track.created_at,
+    )
+
 
 @router.get("/{profile_id}", response_model=ProfileDetail)
 async def get_profile(

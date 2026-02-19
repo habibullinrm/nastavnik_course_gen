@@ -1,0 +1,109 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy Nastavnik gen
+    runs-on: ubuntu-latest
+
+    env:
+      SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+      PROJECT_DIR: ~/projects/nastavnik_course_gen
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── Настройка SSH ──────────────────────────────────────────────────────
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$SSH_PORT" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      # ── Синхронизация кода на сервер (rsync) ──────────────────────────────
+      - name: Sync project files to server
+        run: |
+          rsync -avz --delete \
+            --exclude='.git/' \
+            --exclude='node_modules/' \
+            --exclude='__pycache__/' \
+            --exclude='*.pyc' \
+            --exclude='.env' \
+            --exclude='*.egg-info/' \
+            --exclude='.pytest_cache/' \
+            --exclude='.mypy_cache/' \
+            --exclude='frontend/.next/' \
+            --exclude='frontend/out/' \
+            -e "ssh -i ~/.ssh/deploy_key -p $SSH_PORT -o StrictHostKeyChecking=no" \
+            ./ \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:$PROJECT_DIR/"
+
+      # ── Деплой на сервере ──────────────────────────────────────────────────
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
+          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          # Передаём секреты как переменные окружения в SSH-сессию
+          envs: DEEPSEEK_API_KEY,DEEPSEEK_BASE_URL,DEEPSEEK_MODEL,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,NEXT_PUBLIC_API_URL
+          script: |
+            set -e
+            cd ~/projects/nastavnik_course_gen
+
+            echo "==> Generating .env from .env.example"
+            cp .env.example .env
+
+            # Подставляем обязательные значения из GitHub Secrets
+            sed -i "s|^DEEPSEEK_API_KEY=.*|DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}|" .env
+            sed -i "s|^POSTGRES_USER=.*|POSTGRES_USER=${POSTGRES_USER}|" .env
+            sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${POSTGRES_PASSWORD}|" .env
+            sed -i "s|^POSTGRES_DB=.*|POSTGRES_DB=${POSTGRES_DB}|" .env
+
+            # Подставляем опциональные значения (если заданы в Secrets)
+            [ -n "${DEEPSEEK_BASE_URL}" ] && sed -i "s|^DEEPSEEK_BASE_URL=.*|DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL}|" .env
+            [ -n "${DEEPSEEK_MODEL}" ]    && sed -i "s|^DEEPSEEK_MODEL=.*|DEEPSEEK_MODEL=${DEEPSEEK_MODEL}|" .env
+            [ -n "${NEXT_PUBLIC_API_URL}" ] && sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}|" .env
+
+            echo "==> Rebuilding Docker images"
+            docker compose build
+
+            echo "==> Starting containers (postgres_data volume is preserved)"
+            # Используем 'up -d', а НЕ 'down -v' — том postgres_data не удаляется
+            docker compose up -d
+
+            echo "==> Waiting for PostgreSQL to be ready"
+            for i in $(seq 1 30); do
+              if docker compose exec -T db pg_isready -U "${POSTGRES_USER}" -q 2>/dev/null; then
+                echo "   Database is ready (attempt ${i})"
+                break
+              fi
+              echo "   Waiting... (${i}/30)"
+              sleep 2
+            done
+
+            echo "==> Running Alembic migrations"
+            docker compose exec -T backend alembic upgrade head
+
+            echo "==> Deploy completed successfully"
+            docker compose ps
+
+      # ── Очистка SSH-ключа ─────────────────────────────────────────────────
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

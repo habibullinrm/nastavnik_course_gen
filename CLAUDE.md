@@ -98,6 +98,8 @@ git push --no-verify
 - PostgreSQL 16 (asyncpg) (001-algo-testing-mvp)
 - TypeScript (Next.js 14), Python 3.11 + FastAPI, SQLAlchemy 2.0 (async), Pydantic v2, Tailwind CSS (003-manual-profile)
 - PostgreSQL (JSONB), без файлового хранилища (003-manual-profile)
+- Python 3.11+ (backend), TypeScript 5 (frontend) + FastAPI, SQLAlchemy 2.0 async (backend); Next.js 14+, Tailwind CSS (frontend) (004-track-inners)
+- PostgreSQL 16 (asyncpg) — JSONB для track_data (без изменений схемы БД) (004-track-inners)
 
 ## Recent Changes
 - 001-algo-testing-mvp: Added Python 3.11+ (backend, ML), TypeScript/Next.js (frontend) + FastAPI, Next.js 14+, Tailwind CSS, httpx (async HTTP), Pydantic v2, SQLAlchemy 2.0 (async), alembic

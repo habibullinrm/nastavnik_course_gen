@@ -145,3 +145,10 @@ class ProfileFormResponse(BaseModel):
     validation_result: ValidationResult
     created_at: datetime
     updated_at: datetime | None = None
+
+
+class LastTrackResponse(BaseModel):
+    """Краткая информация о последнем треке профиля."""
+    track_id: UUID
+    status: str
+    created_at: datetime
