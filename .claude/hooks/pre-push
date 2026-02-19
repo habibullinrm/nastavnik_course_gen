@@ -28,9 +28,9 @@ fi
 if [ -d "$GIT_ROOT/backend/tests" ]; then
     log_info "Запуск тестов для backend..."
 
-    cd "$GIT_ROOT/backend"
+    cd "$GIT_ROOT"
 
-    if python -m pytest -x --tb=short >/dev/null 2>&1; then
+    if docker compose exec -T backend python -m pytest tests/ -x --tb=short -q >/dev/null 2>&1; then
         log_success "Backend тесты пройдены"
     else
         log_error "Backend тесты не пройдены"
@@ -42,9 +42,9 @@ fi
 if [ -d "$GIT_ROOT/ml/tests" ]; then
     log_info "Запуск тестов для ml..."
 
-    cd "$GIT_ROOT/ml"
+    cd "$GIT_ROOT"
 
-    if python -m pytest -x --tb=short >/dev/null 2>&1; then
+    if docker compose exec -T ml python -m pytest tests/ -x --tb=short -q >/dev/null 2>&1; then
         log_success "ML тесты пройдены"
     else
         log_error "ML тесты не пройдены"
