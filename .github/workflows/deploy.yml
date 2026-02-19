@@ -90,7 +90,7 @@ jobs:
 
             echo "==> Waiting for PostgreSQL to be ready"
             for i in $(seq 1 30); do
-              if docker compose exec -T db pg_isready -U "${POSTGRES_USER}" -q 2>/dev/null; then
+              if docker compose exec -T db pg_isready -U "${POSTGRES_USER}" -d postgres -q 2>/dev/null; then
                 echo "   PostgreSQL is accepting connections (attempt ${i})"
                 break
               fi

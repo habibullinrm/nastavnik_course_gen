@@ -6,13 +6,17 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-nastavnik}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nastavnik_dev}
       POSTGRES_DB: ${POSTGRES_DB:-nastavnik_testing}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - nastavnik_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nastavnik} -d postgres -q"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   backend:
     build:
@@ -31,7 +35,8 @@ services:
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - nastavnik_network
     restart: unless-stopped

@@ -2,6 +2,10 @@
 # При явном указании -f флагов этот файл НЕ применяется — прод его не видит.
 
 services:
+  db:
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+
   backend:
     volumes:
       - ./backend:/app
