@@ -17,7 +17,7 @@ COPY . .
 RUN ln -s /app /app/ml
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -e .
+RUN pip install -e .
 
 # Expose port
 EXPOSE 8001

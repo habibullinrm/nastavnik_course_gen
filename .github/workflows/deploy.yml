@@ -82,7 +82,7 @@ jobs:
             [ -n "${NEXT_PUBLIC_API_URL}" ] && sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}|" .env
 
             echo "==> Rebuilding Docker images"
-            docker compose build
+            docker compose build --progress=plain
 
             echo "==> Starting containers (postgres_data volume is preserved)"
             # Используем 'up -d', а НЕ 'down -v' — том postgres_data не удаляется
