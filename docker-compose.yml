@@ -32,6 +32,7 @@ services:
       ML_SERVICE_URL: http://ml:8001
       BACKEND_HOST: ${BACKEND_HOST:-0.0.0.0}
       BACKEND_PORT: ${BACKEND_PORT:-8000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://frontend:3000}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:

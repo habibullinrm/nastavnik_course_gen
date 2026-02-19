@@ -1,5 +1,6 @@
 """Backend configuration using Pydantic Settings."""
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,7 +21,20 @@ class Settings(BaseSettings):
     # ML Service configuration
     ML_SERVICE_URL: str = "http://ml:8001"
 
+    # CORS: comma-separated list of allowed origins
+    # Dev default: localhost + Docker frontend container
+    CORS_ORIGINS: str = "http://localhost:3000,http://frontend:3000"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def split_cors_origins(cls, v: str) -> str:
+        return v
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
 
     @property
     def database_url(self) -> str:

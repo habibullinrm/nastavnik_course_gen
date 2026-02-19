@@ -62,7 +62,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           command_timeout: 30m
           # Передаём секреты как переменные окружения в SSH-сессию
-          envs: DEEPSEEK_API_KEY,DEEPSEEK_BASE_URL,DEEPSEEK_MODEL,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,NEXT_PUBLIC_API_URL
+          envs: DEEPSEEK_API_KEY,DEEPSEEK_BASE_URL,DEEPSEEK_MODEL,POSTGRES_USER,POSTGRES_PASSWORD,POSTGRES_DB,NEXT_PUBLIC_API_URL,CORS_ORIGINS
           script: |
             set -e
             cd ~/projects/nastavnik_course_gen
@@ -80,6 +80,7 @@ jobs:
             [ -n "${DEEPSEEK_BASE_URL}" ] && sed -i "s|^DEEPSEEK_BASE_URL=.*|DEEPSEEK_BASE_URL=${DEEPSEEK_BASE_URL}|" .env
             [ -n "${DEEPSEEK_MODEL}" ]    && sed -i "s|^DEEPSEEK_MODEL=.*|DEEPSEEK_MODEL=${DEEPSEEK_MODEL}|" .env
             [ -n "${NEXT_PUBLIC_API_URL}" ] && sed -i "s|^NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}|" .env
+            [ -n "${CORS_ORIGINS}" ] && sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=${CORS_ORIGINS}|" .env
 
             echo "==> Rebuilding Docker images"
             docker compose -f docker-compose.yml -f docker-compose.prod.yml build --progress=plain
