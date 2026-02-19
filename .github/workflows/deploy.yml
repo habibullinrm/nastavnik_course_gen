@@ -91,10 +91,26 @@ jobs:
             echo "==> Waiting for PostgreSQL to be ready"
             for i in $(seq 1 30); do
               if docker compose exec -T db pg_isready -U "${POSTGRES_USER}" -q 2>/dev/null; then
-                echo "   Database is ready (attempt ${i})"
+                echo "   PostgreSQL is accepting connections (attempt ${i})"
                 break
               fi
-              echo "   Waiting... (${i}/30)"
+              echo "   Waiting for PostgreSQL... (${i}/30)"
+              sleep 2
+            done
+
+            echo "==> Ensuring database '${POSTGRES_DB}' exists"
+            docker compose exec -T db psql -U "${POSTGRES_USER}" \
+              -tc "SELECT 1 FROM pg_database WHERE datname = '${POSTGRES_DB}'" \
+              | grep -q 1 \
+              || docker compose exec -T db createdb -U "${POSTGRES_USER}" "${POSTGRES_DB}"
+
+            echo "==> Waiting for database '${POSTGRES_DB}' to be accessible"
+            for i in $(seq 1 30); do
+              if docker compose exec -T db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -c "SELECT 1" -q 2>/dev/null | grep -q 1; then
+                echo "   Database '${POSTGRES_DB}' is accessible (attempt ${i})"
+                break
+              fi
+              echo "   Waiting for database... (${i}/30)"
               sleep 2
             done
 
