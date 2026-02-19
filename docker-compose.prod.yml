@@ -11,3 +11,4 @@ services:
 
   frontend:
     volumes: []
+    command: npm run start
