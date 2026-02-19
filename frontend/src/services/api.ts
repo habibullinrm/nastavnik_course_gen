@@ -16,7 +16,9 @@ import type {
   ProfileFormResponse,
 } from '@/types'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+// Empty string → relative URLs → Next.js rewrites proxy to backend container.
+// Set NEXT_PUBLIC_API_URL only when running outside Docker (e.g. bare `npm run dev`).
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
 class APIError extends Error {
   constructor(public status: number, message: string, public details?: unknown) {

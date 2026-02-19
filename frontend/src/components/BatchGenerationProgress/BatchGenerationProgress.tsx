@@ -146,7 +146,7 @@ export default function BatchGenerationProgress({
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const eventSource = new EventSource(
       `${apiUrl}/api/tracks/batch/${batchId}/progress`
     );

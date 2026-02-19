@@ -56,7 +56,7 @@ export default function ProfileDetailPage() {
     async function loadData() {
       try {
         setLoading(true)
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
 
         const [profileRes, trackRes] = await Promise.allSettled([
           fetch(`${apiUrl}/api/profiles/${profileId}`),

@@ -66,12 +66,15 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     container_name: nastavnik_frontend
     user: root
     command: npm run dev
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      # Пустая строка → браузер использует relative URLs → Next.js rewrites проксируют на backend
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+      # Адрес backend внутри Docker-сети (только server-side, для rewrites)
+      INTERNAL_API_URL: http://backend:8000
     ports:
       - "3000:3000"
     volumes:

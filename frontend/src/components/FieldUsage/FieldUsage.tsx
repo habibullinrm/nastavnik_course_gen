@@ -59,7 +59,7 @@ export default function FieldUsage({ trackId }: { trackId: string }) {
     async function load() {
       try {
         setLoading(true)
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
         const res = await fetch(`${apiUrl}/api/tracks/${trackId}/field-usage`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         setData(await res.json())

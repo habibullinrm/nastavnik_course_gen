@@ -52,7 +52,7 @@ export default function TrackDetailPage() {
     async function fetchTrack() {
       try {
         setLoading(true)
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
         const response = await fetch(`${apiUrl}/api/tracks/${trackId}`)
 
         if (!response.ok) {

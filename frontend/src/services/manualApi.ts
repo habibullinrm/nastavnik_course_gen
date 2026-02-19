@@ -15,7 +15,7 @@ import type {
   ProcessorConfigItem,
 } from '@/types/manual'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
 class APIError extends Error {
   constructor(public status: number, message: string) {

@@ -76,7 +76,7 @@ export default function GenerationProgress({ trackId, onComplete }: GenerationPr
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
     const eventSource = new EventSource(`${apiUrl}/api/tracks/${trackId}/progress`);
 
     const handleEvent = (eventType: string, data: string) => {

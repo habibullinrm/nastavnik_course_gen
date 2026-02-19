@@ -34,7 +34,7 @@ export default function QAPage() {
   async function fetchReports() {
     try {
       setLoading(true)
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
       const response = await fetch(`${apiUrl}/api/qa/reports/`)
       if (response.status === 404) {
         // API не реализовано пока - Phase 5
