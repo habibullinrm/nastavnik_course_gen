@@ -1,14 +1,5 @@
-# Production overrides: отключаем volume-монтирование исходного кода,
-# чтобы Docker layer cache для pip install работал корректно.
+# Production overrides.
 # Использование: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-
-services:
-  backend:
-    volumes: []
-
-  ml:
-    volumes: []
-
-  frontend:
-    volumes: []
-    command: npm run start
+# docker-compose.override.yml при этом НЕ применяется автоматически.
+# Базовый docker-compose.yml уже не содержит dev volumes и dev command —
+# этот файл нужен только для prod-специфичных параметров (если потребуются).
