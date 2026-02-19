@@ -71,10 +71,10 @@ services:
     user: root
     command: npm run dev
     environment:
-      # Пустая строка → браузер использует relative URLs → Next.js rewrites проксируют на backend
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
-      # Адрес backend внутри Docker-сети (только server-side, для rewrites)
-      INTERNAL_API_URL: http://backend:8000
+      # Браузер подключается напрямую к backend по этому URL
+      # Локально: http://localhost:8000 (из .env)
+      # Прод: http://<IP_СЕРВЕРА>:8000 (GitHub Secret NEXT_PUBLIC_API_URL)
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     ports:
       - "3000:3000"
     volumes:
