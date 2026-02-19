@@ -50,7 +50,7 @@ export default function WeeklySchedule({ data }: WeeklyScheduleProps) {
         <span>
           <strong className="text-gray-900">{data.checkpoints?.length ?? 0}</strong> контрольных точек
         </span>
-        {data.final_assessment?.type && (
+        {!!data.final_assessment?.type && (
           <span>
             Итоговая: <strong className="text-gray-900">{String(data.final_assessment.type)}</strong>
           </span>
@@ -181,13 +181,13 @@ export default function WeeklySchedule({ data }: WeeklyScheduleProps) {
         <div className="border border-gray-200 bg-gray-50 rounded-lg p-4">
           <h4 className="text-sm font-semibold text-gray-700 mb-2">Итоговая аттестация</h4>
           <dl className="text-sm text-gray-600 space-y-1">
-            {data.final_assessment.type && (
+            {!!data.final_assessment.type && (
               <div className="flex gap-2">
                 <dt className="text-gray-400">Тип:</dt>
                 <dd>{String(data.final_assessment.type)}</dd>
               </div>
             )}
-            {data.final_assessment.description && (
+            {!!data.final_assessment.description && (
               <div className="flex gap-2">
                 <dt className="text-gray-400">Описание:</dt>
                 <dd>{String(data.final_assessment.description)}</dd>
